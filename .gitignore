@@ -1,0 +1,8 @@
+# Mac metadata files.
+.DS_Store
+
+# VS Code metadata files.
+.vscode
+
+# Build artifacts.
+build/
