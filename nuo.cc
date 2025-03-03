@@ -4,6 +4,7 @@
 // Run code: clang++ -std=c++20 nuo.cc -o build/nuo && ./build/nuo
 #include "builtins.cc"
 #include "file.cc"
+#include "tokenizer.cc"
 
 int getLineEnd(StringView text, int lineStart) {
   // Exit early if we are end of file or already see a newline.
@@ -36,7 +37,7 @@ bool isDashLine(StringView text, int lineStart, int lineEnd) {
   return isCharacterLine(text, lineStart, lineEnd, '-');
 }
 
-bool IsEqualLine(StringView text, int lineStart, int lineEnd) {
+bool isEqualLine(StringView text, int lineStart, int lineEnd) {
   return isCharacterLine(text, lineStart, lineEnd, '=');
 }
 
@@ -50,7 +51,7 @@ Vector<StringView> getTests(String& specTestFile) {
 
     // Add test when finding a test break line. Skip equal line right at the
     // beginning of the file.
-    if (IsEqualLine(specTestFile, lineStart, lineEnd) &&
+    if (isEqualLine(specTestFile, lineStart, lineEnd) &&
         testStart != lineStart) {
       int testSize = lineStart - testStart - 1;
       tests.push_back(StringView(&specTestFile[testStart], testSize));
@@ -105,15 +106,27 @@ Vector<TestCase> getTestCases(Vector<StringView>& tests) {
   return testCases;
 }
 
+Result<None> runTokenizerTests() {
+  TRY_ASSIGN(String testFile, readFile("tokenizer.test"));
+  Vector<StringView> tests = getTests(testFile);
+  Vector<TestCase> testCases = getTestCases(tests);
+  for (const auto& testCase : testCases) {
+    Tokenizer tokenizer(testCase.input);
+    while (true) {
+      TRY_ASSIGN(Token token, tokenizer.next());
+      print(token.toString());
+      if (token.type == TokenType::END) {
+        break;
+      }
+    }
+  }
+  return Ok(None{});
+}
+
 int main() {
-  String tokenizerTestFile = readFile("tokenizer.test");
-  Vector<StringView> tokenizerTests = getTests(tokenizerTestFile);
-  Vector<TestCase> tokenizerTestCases = getTestCases(tokenizerTests);
-  for (const auto& t : tokenizerTestCases) {
-    print("TEST INPUT:");
-    print(t.input);
-    print("TEST RESULT:");
-    print(t.result);
+  Result<None> result = runTokenizerTests();
+  if (!result.ok()) {
+    print("ERROR: {}", result.error());
   }
 }
 

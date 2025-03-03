@@ -6,24 +6,24 @@
 
 #include "builtins.cc"
 
-String readFile(StringView filename) {
+Result<String> readFile(StringView filename) {
   // Create an input file stream.
-  std::ifstream inputFile(filename.data());
+  IfStream inputFile(filename.data());
 
   // Check if the file was opened successfully.
   if (!inputFile.is_open()) {
-    error("Could not open file: {}.", filename);
+    Error("Could not open file: {}.", filename);
   }
 
   // Read the whole file into a buffer.
-  std::stringstream buffer;
+  StringStream buffer;
   buffer << inputFile.rdbuf();
 
   // Close the file
   inputFile.close();
 
   // Return the content buffer as a string.
-  return buffer.str();
+  return Ok(buffer.str());
 }
 
 #endif  // FILE_CC
