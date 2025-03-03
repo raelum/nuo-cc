@@ -1,10 +1,12 @@
+#ifndef FILE_CC
+#define FILE_CC
+
 #include <fstream>
 #include <sstream>
-#include <string>
 
-#include "utils.cc"
+#include "builtins.cc"
 
-std::string read_file(std::string_view filename) {
+String readFile(StringView filename) {
   // Create an input file stream.
   std::ifstream inputFile(filename.data());
 
@@ -23,3 +25,5 @@ std::string read_file(std::string_view filename) {
   // Return the content buffer as a string.
   return buffer.str();
 }
+
+#endif  // FILE_CC
