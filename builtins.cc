@@ -36,14 +36,9 @@ void print(std::format_string<Args...> fmt, Args&&... args) {
 // Result type to gracefully handle errors.
 template <typename T>
 struct Result {
-  enum class Type { OK, ERROR };
-  Type type;
-  T val;
-  String err;
-
-  bool ok() { return this->type == Type::OK; }
-  T value() { return this->val; }
-  String error() { return this->err; }
+  bool ok;
+  T value;
+  String error;
 };
 
 // Represents a "void" type when returning a Result from a function without a
@@ -53,13 +48,11 @@ struct None {};
 // Creates an Ok result with the given value.
 template <typename T>
 Result<T> Ok(T value) {
-  return Result<T>{.type = Result<T>::Type::OK, .val = value};
+  return Result<T>{.ok = true, .value = value};
 };
 
 // Creates an Ok result for void functions.
-Result<None> Ok() {
-  return Result<None>{.type = Result<None>::Type::OK, .val = None{}};
-};
+Result<None> Ok() { return Result<None>{.ok = true, .value = None{}}; };
 
 // Helper struct that helps us automatically deduce the template T param when
 // returning an error result. C++ normally doesn't use return type to help
@@ -73,7 +66,7 @@ struct DeduceReturnForErrorResult {
 
   template <typename T>
   operator Result<T>() {
-    return Result<T>{.type = Result<T>::Type::ERROR, .err = error};
+    return Result<T>{.ok = false, .error = error};
   }
 };
 
@@ -97,10 +90,10 @@ DeduceReturnForErrorResult Error(std::format_string<Args...> fmt,
 // Inner implementation of TRY_ASSIGN.
 #define TRY_ASSIGN_IMPL(resultVar, dest, expr) \
   auto resultVar = (expr);                     \
-  if (!resultVar.ok()) [[unlikely]] {          \
-    return Error(resultVar.error());           \
+  if (!resultVar.ok) [[unlikely]] {            \
+    return Error(std::move(resultVar.error));  \
   }                                            \
-  dest = std::move(resultVar.value());
+  dest = std::move(resultVar.value);
 
 // Assigns the value of a Result to the destination or returns an error Result.
 // We defer the implementation TRY_ASSIGN_IMPL which allows us to concat line
@@ -114,8 +107,8 @@ DeduceReturnForErrorResult Error(std::format_string<Args...> fmt,
   auto result_var = (expr);                                              \
   static_assert(std::is_same<decltype(result_var), Result<None>>::value, \
                 "Single argument to TRY must be of Result<None> type."); \
-  if (!result_var.ok()) [[unlikely]] {                                   \
-    return Error(result_var.error());                                    \
+  if (!result_var.ok) [[unlikely]] {                                     \
+    return Error(std::move(result_var.error));                           \
   }
 
 // Returns an error Result if the called expression returned an error Result.

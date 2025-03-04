@@ -111,11 +111,11 @@ String getTokenizerTestActualResult(const TestCase& testCase) {
   Tokenizer tokenizer(testCase.input);
   while (true) {
     Result<Token> token = tokenizer.next();
-    if (!token.ok()) {
-      return token.error();
+    if (!token.ok) {
+      return token.error;
     }
-    result << token.value().toString();
-    if (token.value().type == TokenType::END) {
+    result << token.value.toString();
+    if (token.value.type == TokenType::END) {
       break;
     }
     result << '\n';
@@ -176,8 +176,8 @@ Result<None> runTokenizerTests() {
 
 int main() {
   Result<None> result = runTokenizerTests();
-  if (!result.ok()) {
-    print("ERROR: {}", result.error());
+  if (!result.ok) {
+    print("ERROR: {}", result.error);
   }
 }
 
