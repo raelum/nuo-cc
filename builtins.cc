@@ -94,8 +94,7 @@ DeduceReturnForErrorResult Error(std::format_string<Args...> fmt,
 #define CONCAT_INNER(x, y) x##y
 #define CONCAT(x, y) CONCAT_INNER(x, y)
 
-// Inner implementation of TRY_ASSIGN, which allows us to concatenate a unique
-// id to the result_var variable name.
+// Inner implementation of TRY_ASSIGN.
 #define TRY_ASSIGN_IMPL(resultVar, dest, expr) \
   auto resultVar = (expr);                     \
   if (!resultVar.ok()) [[unlikely]] {          \
@@ -104,7 +103,38 @@ DeduceReturnForErrorResult Error(std::format_string<Args...> fmt,
   dest = std::move(resultVar.value());
 
 // Assigns the value of a Result to the destination or returns an error Result.
+// We defer the implementation TRY_ASSIGN_IMPL which allows us to concat line
+// number to end of _result variable.
 #define TRY_ASSIGN(dest, expr) \
   TRY_ASSIGN_IMPL(CONCAT(_result, __LINE__), dest, expr)
+
+// Inner implementation of TRY_CALL. We expect TRY_CALL to be used for functions
+// that return a Result<None> so we apply a static assert to enforce this.
+#define TRY_CALL_IMPL(result_var, expr)                                  \
+  auto result_var = (expr);                                              \
+  static_assert(std::is_same<decltype(result_var), Result<None>>::value, \
+                "Single argument to TRY must be of Result<None> type."); \
+  if (!result_var.ok()) [[unlikely]] {                                   \
+    return Error(result_var.error());                                    \
+  }
+
+// Returns an error Result if the called expression returned an error Result.
+// We defer the implementation TRY_CALL_IMPL which allows us to concat line
+// number to end of _result variable.
+#define TRY_CALL(expr) TRY_CALL_IMPL(CONCAT(_result, __LINE__), expr)
+
+// Helper function to get the desired macro name based on the number of
+// args passed to it.
+#define GET_MACRO(_1, _2, NAME, ...) NAME
+
+// Handles both TRY_ASSIGN or TRY_CALL cases. Usage example:
+// TRY(int i, attemptCreatingInt());
+// TRY(attemptCalculation());
+//
+// It does this by using GET_MACRO to produce the target macro name depening
+// on the number of arguments provided to this one. For example if TRY
+// receives 1 arg, then GET_MACRO sees arg1, TRY_ASSIGN, TRY_CALL
+// from which RETURN_IF_ERROR is picked to be returned.
+#define TRY(...) GET_MACRO(__VA_ARGS__, TRY_ASSIGN, TRY_CALL)(__VA_ARGS__)
 
 #endif  // BUILTINS_CC

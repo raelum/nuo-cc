@@ -149,18 +149,14 @@ String generateSpecTests(Vector<TestCase>& testCases,
 }
 
 Result<None> runTokenizerTests() {
-  TRY_ASSIGN(String testFile, readFile("tokenizer.test"));
+  TRY(String testFile, readFile("tokenizer.test"));
   Vector<StringView> tests = getTests(testFile);
   Vector<TestCase> testCases = getTestCases(tests);
   Vector<String> actualResults = getTokenizerTestActualResults(testCases);
 
   // Write updated spec tests.
   String updatedSpecTests = generateSpecTests(testCases, actualResults);
-  Result<None> writeResult =
-      writeFile("build/tokenizer.test", updatedSpecTests);
-  if (!writeResult.ok()) {
-    return Error(writeResult.error());
-  }
+  TRY(writeFile("build/tokenizer.test", updatedSpecTests));
 
   // Check if the actual results match expected ones.
   bool testsPassed = true;
