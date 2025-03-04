@@ -44,8 +44,23 @@ struct Token {
   TokenType type;
   StringView value;
   int line;
+  int column;
 
-  String toString() { return tokenTypeToString(this->type); }
+  String toString() {
+    bool showValue = false;
+    if (this->type == TokenType::IDENTIFIER) {
+      showValue = true;
+    }
+
+    StringStream output;
+    output << "token: " << tokenTypeToString(this->type) << '\n';
+    if (showValue) {
+      output << "  value: " << this->value << '\n';
+    }
+    output << "  line: " << this->line << '\n';
+    output << "  column: " << this->column;
+    return output.str();
+  }
 };
 
 struct Tokenizer {
@@ -59,6 +74,8 @@ struct Tokenizer {
   int openParenCount = 0;
   // Line number we are currently on.
   int line = 1;
+  // Index to the start of the current line.
+  int lineStart = 0;
 
   Tokenizer(StringView code) : code(code) {}
 
@@ -75,7 +92,7 @@ struct Tokenizer {
 
     char c = this->getChar();
     if (c == '\n') {
-      this->line++;
+      this->advanceLine();
       return Ok(this->makeToken(TokenType::NEWLINE));
     } else if (this->isAlpha(c)) {
       return Ok(this->makeIdentifierToken());
@@ -126,6 +143,15 @@ struct Tokenizer {
   // Whether or not we've reached the end of the code.
   bool isAtEnd() { return this->end >= this->code.length(); }
 
+  // Tracks state for moving to the next line.
+  void advanceLine() {
+    this->line++;
+    this->lineStart = this->end;
+  }
+
+  // Returns the column the current token starts at.
+  int getTokenColumn() { return this->start - this->lineStart + 1; }
+
   bool isAlpha(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
   }
@@ -142,7 +168,7 @@ struct Tokenizer {
       // Consume any newline characters if we are within a parenthesis.
       else if (c == '\n' && this->openParenCount > 0) {
         this->consumeChar();
-        this->line++;
+        this->advanceLine();
       } else {
         break;
       }
@@ -150,8 +176,10 @@ struct Tokenizer {
   }
 
   Token makeToken(TokenType type) {
-    return Token{
-        .type = type, .value = this->makeTokenValue(), .line = this->line};
+    return Token{.type = type,
+                 .value = this->makeTokenValue(),
+                 .line = this->line,
+                 .column = this->getTokenColumn()};
   }
 
   StringView makeTokenValue() {
@@ -212,12 +240,17 @@ struct Tokenizer {
 
   Result<Token> makeStringToken() {
     int startLine = this->line;
+    int startColumn = getTokenColumn();
     // Consume characters until we reach the end of the string or the end of the
     // file.
     while (!this->isAtEnd() && this->peekChar() != '"') {
       // We allow multi-line strings so increment line number here.
+      // NOTE: For advanceLine to work properly, the newline needs to already
+      //       be consumed.
       if (this->peekChar() == '\n') {
-        this->line++;
+        this->consumeChar();
+        this->advanceLine();
+        continue;
       }
       this->consumeChar();
     }
@@ -226,6 +259,7 @@ struct Tokenizer {
       this->consumeChar();
       return Ok(this->makeToken(TokenType::STRING));
     }
-    return Error("Unterminated string that started on line {}.", startLine);
+    return Error("Unterminated String that started on line {}, column {}.",
+                 startLine, startColumn);
   }
 };

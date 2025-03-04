@@ -15,6 +15,7 @@ using StringStream = std::stringstream;
 template <typename T>
 using Vector = std::vector<T>;
 using IfStream = std::ifstream;
+using OfStream = std::ofstream;
 
 // Convenience print function.
 template <typename T>
@@ -45,10 +46,19 @@ struct Result {
   String error() { return this->err; }
 };
 
+// Represents a "void" type when returning a Result from a function without a
+// return value.
+struct None {};
+
 // Creates an Ok result with the given value.
 template <typename T>
 Result<T> Ok(T value) {
   return Result<T>{.type = Result<T>::Type::OK, .val = value};
+};
+
+// Creates an Ok result for void functions.
+Result<None> Ok() {
+  return Result<None>{.type = Result<None>::Type::OK, .val = None{}};
 };
 
 // Helper struct that helps us automatically deduce the template T param when
@@ -79,10 +89,6 @@ DeduceReturnForErrorResult Error(std::format_string<Args...> fmt,
   return DeduceReturnForErrorResult{
       .error = std::vformat(fmt.get(), std::make_format_args(args...))};
 };
-
-// Represents a "void" type when returning a Result from a function without a
-// return value.
-struct None {};
 
 // Helper macros for concatenating macro values.
 #define CONCAT_INNER(x, y) x##y

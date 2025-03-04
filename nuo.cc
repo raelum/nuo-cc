@@ -106,21 +106,76 @@ Vector<TestCase> getTestCases(Vector<StringView>& tests) {
   return testCases;
 }
 
+String getTokenizerTestActualResult(const TestCase& testCase) {
+  StringStream result;
+  Tokenizer tokenizer(testCase.input);
+  while (true) {
+    Result<Token> token = tokenizer.next();
+    if (!token.ok()) {
+      return token.error();
+    }
+    result << token.value().toString();
+    if (token.value().type == TokenType::END) {
+      break;
+    }
+    result << '\n';
+  }
+  return result.str();
+}
+
+Vector<String> getTokenizerTestActualResults(Vector<TestCase>& testCases) {
+  Vector<String> results;
+  for (const auto& testCase : testCases) {
+    results.push_back(getTokenizerTestActualResult(testCase));
+  }
+  return results;
+}
+
+String generateSpecTests(Vector<TestCase>& testCases,
+                         Vector<String>& actualResults) {
+  StringStream specTests;
+  for (int i = 0; i < testCases.size(); i++) {
+    specTests << testCases[i].input << '\n';
+    specTests << "----\n";
+    specTests << actualResults[i] << '\n';
+    specTests << "====";
+
+    // Only add new lines if this isn't the last test.
+    if (i < testCases.size() - 1) {
+      specTests << '\n';
+    }
+  }
+  return specTests.str();
+}
+
 Result<None> runTokenizerTests() {
   TRY_ASSIGN(String testFile, readFile("tokenizer.test"));
   Vector<StringView> tests = getTests(testFile);
   Vector<TestCase> testCases = getTestCases(tests);
-  for (const auto& testCase : testCases) {
-    Tokenizer tokenizer(testCase.input);
-    while (true) {
-      TRY_ASSIGN(Token token, tokenizer.next());
-      print(token.toString());
-      if (token.type == TokenType::END) {
-        break;
-      }
+  Vector<String> actualResults = getTokenizerTestActualResults(testCases);
+
+  // Write updated spec tests.
+  String updatedSpecTests = generateSpecTests(testCases, actualResults);
+  Result<None> writeResult =
+      writeFile("build/tokenizer.test", updatedSpecTests);
+  if (!writeResult.ok()) {
+    return Error(writeResult.error());
+  }
+
+  // Check if the actual results match expected ones.
+  bool testsPassed = true;
+  for (int i = 0; i < testCases.size(); i++) {
+    if (testCases[i].result != actualResults[i]) {
+      testsPassed = false;
+      break;
     }
   }
-  return Ok(None{});
+  if (testsPassed) {
+    print("Tokenizer tests passed!");
+  } else {
+    print("Tokenizer tests failed.");
+  }
+  return Ok();
 }
 
 int main() {

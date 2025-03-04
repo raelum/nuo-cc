@@ -6,24 +6,25 @@
 
 #include "builtins.cc"
 
-Result<String> readFile(StringView filename) {
-  // Create an input file stream.
-  IfStream inputFile(filename.data());
-
-  // Check if the file was opened successfully.
+Result<String> readFile(StringView fileName) {
+  IfStream inputFile(fileName.data());
   if (!inputFile.is_open()) {
-    Error("Could not open file: {}.", filename);
+    Error("Could not open file: {}.", fileName);
   }
-
-  // Read the whole file into a buffer.
   StringStream buffer;
   buffer << inputFile.rdbuf();
-
-  // Close the file
   inputFile.close();
-
-  // Return the content buffer as a string.
   return Ok(buffer.str());
+}
+
+Result<None> writeFile(StringView fileName, StringView fileContents) {
+  OfStream outputFile(fileName.data());
+  if (!outputFile.is_open()) {
+    Error("Could not open file: {}.", fileName);
+  }
+  outputFile << fileContents;
+  outputFile.close();
+  return Ok();
 }
 
 #endif  // FILE_CC
