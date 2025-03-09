@@ -9,7 +9,7 @@
 Result<String> readFile(StringView fileName) {
   IfStream inputFile(fileName.data());
   if (!inputFile.is_open()) {
-    Error("Could not open file: {}.", fileName);
+    return Error("Could not open file: {}.", fileName);
   }
   StringStream buffer;
   buffer << inputFile.rdbuf();
@@ -20,7 +20,7 @@ Result<String> readFile(StringView fileName) {
 Result<None> writeFile(StringView fileName, StringView fileContents) {
   OfStream outputFile(fileName.data());
   if (!outputFile.is_open()) {
-    Error("Could not open file: {}.", fileName);
+    return Error("Could not open file: {}.", fileName);
   }
   outputFile << fileContents;
   outputFile.close();

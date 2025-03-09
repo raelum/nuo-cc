@@ -48,7 +48,8 @@ struct Token {
 
   String toString() {
     bool showValue = false;
-    if (this->type == TokenType::IDENTIFIER) {
+    if (this->type == TokenType::IDENTIFIER ||
+        this->type == TokenType::NUMBER || this->type == TokenType::STRING) {
       showValue = true;
     }
 
@@ -101,30 +102,63 @@ struct Tokenizer {
     } else if (c == '"') {
       return this->makeStringToken();
     } else if (c == '(') {
+      this->openParenCount++;
       return Ok(this->makeToken(TokenType::LEFT_PAREN));
     } else if (c == ')') {
+      this->openParenCount--;
       return Ok(this->makeToken(TokenType::RIGHT_PAREN));
     } else if (c == '{') {
       return Ok(this->makeToken(TokenType::LEFT_BRACE));
     } else if (c == '}') {
       return Ok(this->makeToken(TokenType::RIGHT_BRACE));
+    } else if (c == '[') {
+      return Ok(this->makeToken(TokenType::LEFT_BRACKET));
+    } else if (c == ']') {
+      return Ok(this->makeToken(TokenType::RIGHT_BRACKET));
     } else if (c == ',') {
       return Ok(this->makeToken(TokenType::COMMA));
     } else if (c == ':') {
       return Ok(this->makeToken(TokenType::COLON));
     } else if (c == '=') {
+      if (this->peekChar() == '=') {
+        this->consumeChar();
+        return Ok(this->makeToken(TokenType::EQUAL_EQUAL));
+      }
       return Ok(this->makeToken(TokenType::EQUAL));
+    } else if (c == '!') {
+      if (this->peekChar() == '=') {
+        this->consumeChar();
+        return Ok(this->makeToken(TokenType::BANG_EQUAL));
+      }
+      return Ok(this->makeToken(TokenType::BANG));
     } else if (c == '<') {
+      if (this->peekChar() == '=') {
+        this->consumeChar();
+        return Ok(this->makeToken(TokenType::LESS_EQUAL));
+      }
       return Ok(this->makeToken(TokenType::LESS));
     } else if (c == '>') {
+      if (this->peekChar() == '=') {
+        this->consumeChar();
+        return Ok(this->makeToken(TokenType::GREATER_EQUAL));
+      }
       return Ok(this->makeToken(TokenType::GREATER));
     } else if (c == '+') {
+      if (this->peekChar() == '=') {
+        this->consumeChar();
+        return Ok(this->makeToken(TokenType::PLUS_EQUAL));
+      }
       return Ok(this->makeToken(TokenType::PLUS));
     } else if (c == '-') {
+      if (this->peekChar() == '=') {
+        this->consumeChar();
+        return Ok(this->makeToken(TokenType::MINUS_EQUAL));
+      }
       return Ok(this->makeToken(TokenType::MINUS));
     }
 
-    return Error("Ran into an unexpected character '{}'", c);
+    return Error("Ran into an unexpected character '{}' at line {} column {}",
+                 c, this->line, this->end);
   }
 
   // Peeks at the next character without consuming it.
@@ -224,8 +258,10 @@ struct Tokenizer {
     if (this->peekChar() == '.') {
       this->consumeChar();
       if (!this->isDigit(this->peekChar())) {
-        Error("Unexpected character after decimal . in number: '{}'",
-              this->peekChar());
+        return Error(
+            "Unexpected character '{}' after number decimal at line {} column "
+            "{}",
+            this->peekChar(), this->line, this->end + 1);
       }
       consumeNumberChars();
     }
@@ -241,15 +277,18 @@ struct Tokenizer {
   Result<Token> makeStringToken() {
     int startLine = this->line;
     int startColumn = getTokenColumn();
+    int endLine = this->line;
+    int endLineStart = this->lineStart;
     // Consume characters until we reach the end of the string or the end of the
     // file.
     while (!this->isAtEnd() && this->peekChar() != '"') {
       // We allow multi-line strings so increment line number here.
-      // NOTE: For advanceLine to work properly, the newline needs to already
-      //       be consumed.
       if (this->peekChar() == '\n') {
         this->consumeChar();
-        this->advanceLine();
+        // NOTE: Don't update line info with advanceLine() since we need to
+        //       make the multi-line string token with the start line info.
+        endLine++;
+        endLineStart = this->end;
         continue;
       }
       this->consumeChar();
@@ -257,9 +296,13 @@ struct Tokenizer {
     // Return string token only if we've truly reached the end of the string.
     if (!this->isAtEnd() && this->peekChar() == '"') {
       this->consumeChar();
-      return Ok(this->makeToken(TokenType::STRING));
+      Token stringToken = this->makeToken(TokenType::STRING);
+      // Update line info, now that we have made the string token.
+      this->line = endLine;
+      this->lineStart = endLineStart;
+      return Ok(stringToken);
     }
-    return Error("Unterminated String that started on line {}, column {}.",
+    return Error("Unterminated string that started at line {} column {}.",
                  startLine, startColumn);
   }
 };
