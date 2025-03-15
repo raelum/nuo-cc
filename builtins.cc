@@ -118,16 +118,16 @@ DeduceReturnForErrorResult Error(std::format_string<Args...> fmt,
 
 // Helper function to get the desired macro name based on the number of
 // args passed to it.
-#define GET_MACRO(_1, _2, NAME, ...) NAME
+#define GET_TRY_MACRO(_1, _2, NAME, ...) NAME
 
 // Handles both TRY_ASSIGN or TRY_CALL cases. Usage example:
 // TRY(int i, attemptCreatingInt());
 // TRY(attemptCalculation());
 //
-// It does this by using GET_MACRO to produce the target macro name depening
+// It does this by using GET_MACRO to produce the target macro name depending
 // on the number of arguments provided to this one. For example if TRY
 // receives 1 arg, then GET_MACRO sees arg1, TRY_ASSIGN, TRY_CALL
 // from which RETURN_IF_ERROR is picked to be returned.
-#define TRY(...) GET_MACRO(__VA_ARGS__, TRY_ASSIGN, TRY_CALL)(__VA_ARGS__)
+#define TRY(...) GET_TRY_MACRO(__VA_ARGS__, TRY_ASSIGN, TRY_CALL)(__VA_ARGS__)
 
 #endif  // BUILTINS_CC

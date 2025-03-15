@@ -1,0 +1,66 @@
+// Stack values
+Int
+Char
+[Char]  // Internally Array<Char>
+
+// Owned heap values
+^Int  // Internally Strong<Int>
+^Char  // Internally Strong<Char>
+^[Char]  // Internally Strong<Array<Char>>>
+
+// Weak heap reference
+^?Int  // Internally Weak<Int>
+^?Char  // Internally Weak<Char>
+^?[Char]  // Internally Weak<Array<Char>>>
+
+// Optional type
+Option<Int>
+Option<Char>
+Option<[Char]>
+
+type String {
+  size: Int
+  data: ^[Char]
+}
+
+type StringSlice {
+  start: Int
+  end: Int
+  data: ^[Char]
+}
+
+// Pass by borrow. & can only be used in function params.
+// Can pass either stack or heap values by reference.
+fn greet(name: &String) {
+  print(f"Hello {name}")
+}
+
+// Call function and pass by borrow.
+name := "allen"
+greet(&name)
+
+// Pass by ownership of stack allocated string.
+fn greet(name: String) {
+  print(name)
+}
+// Compiler enforcement:
+// - If the function doesn't pass on the ownership of name to another location,
+//   then ask the user to pass name by borrow instead.
+
+// Call by yielding stack ownership (move by default)
+name := "allen"
+greet(name)
+// name is no longer usable.
+
+// Call by forking stack ownership. Increment ref count of char heap array.
+name := "allen"
+greet(fork(name))
+// name is still usable and should have another reference to it.
+//
+// Compiler enforcement:
+// - The compiler can check if there are further usages of "name" after the
+//   fork. If not, then a fork with an inc ref count operation wasn't necessary.
+
+// Call by cloning data. (including heap data)
+name := "allen"
+greet(clone(name))
