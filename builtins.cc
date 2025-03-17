@@ -4,6 +4,7 @@
 #include <format>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -16,6 +17,8 @@ template <typename T>
 using Vector = std::vector<T>;
 using IfStream = std::ifstream;
 using OfStream = std::ofstream;
+template <typename T>
+using Optional = std::optional<T>;
 
 // Convenience print function.
 template <typename T>

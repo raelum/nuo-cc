@@ -33,6 +33,10 @@ bool isCharacterLine(StringView text, int lineStart, int lineEnd, char c) {
   return true;
 }
 
+bool isTickLine(StringView text, int lineStart, int lineEnd) {
+  return isCharacterLine(text, lineStart, lineEnd, '`');
+}
+
 bool isDashLine(StringView text, int lineStart, int lineEnd) {
   return isCharacterLine(text, lineStart, lineEnd, '-');
 }
@@ -70,40 +74,76 @@ Vector<StringView> getTests(String& specTestFile) {
 }
 
 struct TestCase {
+  StringView description;
   StringView input;
   StringView result;
 };
 
-TestCase getTestCase(StringView test) {
+Result<TestCase> getTestCase(StringView test) {
   int lineStart = 0;
   int lineEnd = 0;
-  while (lineStart < test.length()) {
-    // Find the end of the current line.
-    lineEnd = getLineEnd(test, lineStart);
 
-    // Find the dash line in this test.
-    if (isDashLine(test, lineStart, lineEnd)) {
+  // Consume any preceding newlines.
+  while (test[lineStart] == '\n') {
+    lineStart += 1;
+  }
+
+  // Ensure we find the description block opener.
+  lineEnd = getLineEnd(test, lineStart);
+  if (!isTickLine(test, lineStart, lineEnd)) {
+    return Error("Didn't find beginning of description in test:\n{}", test);
+  }
+
+  // Find end of description block.
+  int descriptionStart = lineEnd + 1;
+  lineStart = descriptionStart;
+  while (lineStart < test.length()) {
+    lineEnd = getLineEnd(test, lineStart);
+    if (isTickLine(test, lineStart, lineEnd)) {
       break;
     }
-
-    // Move to the next line.
     lineStart = lineEnd + 1;
   }
 
-  int inputStart = 0;
-  int inputSize = lineStart == 0 ? 0 : lineStart - inputStart - 1;
+  // Ensure we found end of description.
+  if (lineStart >= test.length()) {
+    return Error("Didn't find end of description in test:\n{}", test);
+  }
+
+  int descriptionSize = lineStart - descriptionStart - 1;
+
+  // Find the end of test input.
+  int inputStart = lineEnd + 1;
+  lineStart = inputStart;
+  while (lineStart < test.length()) {
+    lineEnd = getLineEnd(test, lineStart);
+    if (isDashLine(test, lineStart, lineEnd)) {
+      break;
+    }
+    lineStart = lineEnd + 1;
+  }
+
+  // Ensure we found end of input.
+  if (lineStart >= test.length()) {
+    return Error("Didn't find end of input in test:\n{}", test);
+  }
+
+  int inputSize = lineStart - inputStart - 1;
   int resultStart = lineEnd == test.length() ? lineEnd : lineEnd + 1;
   int resultSize = test.length() - resultStart;
-  return TestCase{.input = StringView(&test[inputStart], inputSize),
-                  .result = StringView(&test[resultStart], resultSize)};
+  return Ok(TestCase{
+      .description = StringView(&test[descriptionStart], descriptionSize),
+      .input = StringView(&test[inputStart], inputSize),
+      .result = StringView(&test[resultStart], resultSize)});
 }
 
-Vector<TestCase> getTestCases(Vector<StringView>& tests) {
+Result<Vector<TestCase>> getTestCases(Vector<StringView>& tests) {
   Vector<TestCase> testCases;
   for (const auto& t : tests) {
-    testCases.push_back(getTestCase(t));
+    TRY(TestCase testCase, getTestCase(t));
+    testCases.push_back(testCase);
   }
-  return testCases;
+  return Ok(testCases);
 }
 
 String getTokenizerTestActualResult(const TestCase& testCase) {
@@ -135,6 +175,9 @@ String generateSpecTests(Vector<TestCase>& testCases,
                          Vector<String>& actualResults) {
   StringStream specTests;
   for (int i = 0; i < testCases.size(); i++) {
+    specTests << "````\n";
+    specTests << testCases[i].description << '\n';
+    specTests << "````\n";
     specTests << testCases[i].input << '\n';
     specTests << "----\n";
     specTests << actualResults[i] << '\n';
@@ -142,7 +185,7 @@ String generateSpecTests(Vector<TestCase>& testCases,
 
     // Only add new lines if this isn't the last test.
     if (i < testCases.size() - 1) {
-      specTests << '\n';
+      specTests << "\n\n";
     }
   }
   return specTests.str();
@@ -151,7 +194,7 @@ String generateSpecTests(Vector<TestCase>& testCases,
 Result<None> runTokenizerTests() {
   TRY(String testFile, readFile("tokenizer.test"));
   Vector<StringView> tests = getTests(testFile);
-  Vector<TestCase> testCases = getTestCases(tests);
+  TRY(Vector<TestCase> testCases, getTestCases(tests));
   Vector<String> actualResults = getTokenizerTestActualResults(testCases);
 
   // Write updated spec tests.

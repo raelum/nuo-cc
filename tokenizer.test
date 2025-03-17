@@ -1,3 +1,6 @@
+````
+Various symbols.
+````
 ( ) { } [ ] : ,
 ----
 token: LEFT_PAREN
@@ -28,6 +31,10 @@ token: END
   line: 1
   column: 16
 ====
+
+````
+Symbols related to boolean expressions.
+````
 = ! + - > <
 == != += -= >= <=
 ----
@@ -74,6 +81,10 @@ token: END
   line: 2
   column: 18
 ====
+
+````
+Control flow keywords.
+````
 fn return
 if elif else
 for
@@ -106,6 +117,10 @@ token: END
   line: 3
   column: 4
 ====
+
+````
+Type keywords.
+````
 int
 ----
 token: INT
@@ -115,6 +130,10 @@ token: END
   line: 1
   column: 4
 ====
+
+````
+User-defined identifiers.
+````
 x y z
 x123 y_a z_78_b
 ----
@@ -149,6 +168,10 @@ token: END
   line: 2
   column: 16
 ====
+
+````
+Numbers.
+````
 123
 456.7809
 000
@@ -175,6 +198,18 @@ token: END
   line: 3
   column: 4
 ====
+
+````
+Unexpected character after number decimal.
+````
+123.anya
+----
+Unexpected character 'a' after number decimal at line 1 column 5
+====
+
+````
+Strings.
+````
 "anya likes to play"
 "boren is cool"
 ("carot loves
@@ -217,6 +252,19 @@ token: END
   line: 5
   column: 19
 ====
+
+````
+Unterminated string.
+````
+anya "boren loves to play
+with cool kids
+----
+Unterminated string that started at line 1 column 6.
+====
+
+````
+Newlines are skipped within parenthesis.
+````
 (anya, boren,
  carot, dyno, esha,
  fyre)
@@ -278,16 +326,11 @@ token: END
   line: 4
   column: 5
 ====
+
+````
+Unexpected character.
+````
 anya ~ boren
 ----
 Ran into an unexpected character '~' at line 1 column 6
-====
-123.anya
-----
-Unexpected character 'a' after number decimal at line 1 column 5
-====
-anya "boren loves to play
-with cool kids
-----
-Unterminated string that started at line 1 column 6.
 ====

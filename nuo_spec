@@ -31,6 +31,9 @@ type StringSlice {
 
 // Pass by borrow. & can only be used in function params.
 // Can pass either stack or heap values by reference.
+//
+// Compiler enforcement:
+// - Ensure that there are no overlapping ref or heap when passed to a function.
 fn greet(name: &String) {
   print(f"Hello {name}")
 }
@@ -64,3 +67,67 @@ greet(fork(name))
 // Call by cloning data. (including heap data)
 name := "allen"
 greet(clone(name))
+
+// Borrows can be used in for loops.
+// 
+// Compiler enforcement:
+// - Similar to functions enforcing exclusitivity, ensure that value with
+//   overlaps with &v can be modified
+// - Unfortunately this means, the compiler also needs to understand what
+//   values are modified for each called function inside the for loop.
+// - MVP can simply block any usages of values within the for loop until we run
+//   into problems with this limitation.
+values = [1, 2, 3, 4]
+for &v in values {
+  print(v)
+  // Blocked by compiler, because the value it modifies overlaps with v.
+  values.push(1)
+  // Compiler needs to either block this everytime, or understand if the
+  // called function modifies values or
+  inner_function(&values)
+}
+
+
+
+
+Areas for Clarification and Potential Challenges:
+
+String Representation:
+The String and StringSlice types are clear, but consider the implications of ^[Char] for string manipulation. Are strings always UTF-8? How are encoding/decoding handled?
+Clarify how string literals like "allen" are handled. Are they implicitly converted to String or [Char]?
+
+Forking:
+While fork is a good concept, the compiler enforcement to detect unnecessary forks might be complex. It requires data flow analysis to track usage patterns.
+What happens if a weak pointer exists to the data being forked? Does the weak pointer get upgraded?
+
+Borrowing and Mutability:
+You mention preventing overlapping borrows. Is mutability also a consideration? Do you have mutable borrows (e.g., &mut)? If not, how are in-place modifications handled? If so, then you must add that syntax to the language, and the compiler must enforce that there are no overlapping mutable borrows, or mutable and immutable borrows.
+The for loop example is a good illustration of the challenges. How will the compiler handle complex function calls within loops that might affect borrowed values? A conservative approach (blocking all modifications) might be necessary for the MVP, but it limits functionality.
+
+Ownership and Function Calls:
+The rule "If the function doesn't pass on the ownership of name to another location, then ask the user to pass name by borrow instead" is sound, but its implementation might be difficult. Data flow analysis is needed to track ownership transfer.
+What happens if a function takes multiple owned parameters? Does the order of passing them matter?
+
+Weak References:
+How are weak references upgraded to strong references? Is there a try_upgrade or similar operation?
+What is the default value of a weak reference if the strong reference goes out of scope? Option<T>?
+
+Array and Slice Interactions:
+How does the compiler handle conversions between [Char] (array) and StringSlice?
+How are array bounds checked?
+
+Error Handling:
+How does the language handle errors like out-of-bounds array access, null pointer dereferences (with weak references), or failed memory allocations?
+Is there a Result type or exception handling?
+
+Type Inference:
+To what extent does the language support type inference? Will the compiler infer types for variables and function parameters?
+String Interpolation.
+You use f"Hello {name}". Is this a feature of the print function, or a general string interpolation feature?
+
+Suggestions:
+
+Explicit Mutability: Consider adding explicit mutability annotations (e.g., mut) to clarify which variables and references can be modified.
+Result Type: Add a Result type to make error handling more robust.
+Clear String Encoding: Specify the string encoding (e.g., UTF-8) and provide functions for encoding/decoding.
+Detailed Examples: Provide more detailed examples to illustrate complex scenarios, such as nested data structures, function calls with multiple parameters, and interactions between owned and borrowed values.
