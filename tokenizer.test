@@ -3,33 +3,15 @@ Various symbols.
 ````
 ( ) { } [ ] : ,
 ----
-token: LEFT_PAREN
-  line: 1
-  column: 1
-token: RIGHT_PAREN
-  line: 1
-  column: 3
-token: LEFT_BRACE
-  line: 1
-  column: 5
-token: RIGHT_BRACE
-  line: 1
-  column: 7
-token: LEFT_BRACKET
-  line: 1
-  column: 9
-token: RIGHT_BRACKET
-  line: 1
-  column: 11
-token: COLON
-  line: 1
-  column: 13
-token: COMMA
-  line: 1
-  column: 15
-token: END
-  line: 1
-  column: 16
+LEFT_PAREN
+RIGHT_PAREN
+LEFT_BRACE
+RIGHT_BRACE
+LEFT_BRACKET
+RIGHT_BRACKET
+COLON
+COMMA
+END
 ====
 
 ````
@@ -38,48 +20,20 @@ Symbols related to boolean expressions.
 = ! + - > <
 == != += -= >= <=
 ----
-token: EQUAL
-  line: 1
-  column: 1
-token: BANG
-  line: 1
-  column: 3
-token: PLUS
-  line: 1
-  column: 5
-token: MINUS
-  line: 1
-  column: 7
-token: GREATER
-  line: 1
-  column: 9
-token: LESS
-  line: 1
-  column: 11
-token: NEWLINE
-  line: 2
-  column: 0
-token: EQUAL_EQUAL
-  line: 2
-  column: 1
-token: BANG_EQUAL
-  line: 2
-  column: 4
-token: PLUS_EQUAL
-  line: 2
-  column: 7
-token: MINUS_EQUAL
-  line: 2
-  column: 10
-token: GREATER_EQUAL
-  line: 2
-  column: 13
-token: LESS_EQUAL
-  line: 2
-  column: 16
-token: END
-  line: 2
-  column: 18
+EQUAL
+BANG
+PLUS
+MINUS
+GREATER
+LESS
+NEWLINE
+EQUAL_EQUAL
+BANG_EQUAL
+PLUS_EQUAL
+MINUS_EQUAL
+GREATER_EQUAL
+LESS_EQUAL
+END
 ====
 
 ````
@@ -89,33 +43,15 @@ fn return
 if elif else
 for
 ----
-token: FN
-  line: 1
-  column: 1
-token: RETURN
-  line: 1
-  column: 4
-token: NEWLINE
-  line: 2
-  column: 0
-token: IF
-  line: 2
-  column: 1
-token: ELIF
-  line: 2
-  column: 4
-token: ELSE
-  line: 2
-  column: 9
-token: NEWLINE
-  line: 3
-  column: 0
-token: FOR
-  line: 3
-  column: 1
-token: END
-  line: 3
-  column: 4
+FN
+RETURN
+NEWLINE
+IF
+ELIF
+ELSE
+NEWLINE
+FOR
+END
 ====
 
 ````
@@ -123,12 +59,8 @@ Type keywords.
 ````
 int
 ----
-token: INT
-  line: 1
-  column: 1
-token: END
-  line: 1
-  column: 4
+INT
+END
 ====
 
 ````
@@ -137,36 +69,14 @@ User-defined identifiers.
 x y z
 x123 y_a z_78_b
 ----
-token: IDENTIFIER
-  value: x
-  line: 1
-  column: 1
-token: IDENTIFIER
-  value: y
-  line: 1
-  column: 3
-token: IDENTIFIER
-  value: z
-  line: 1
-  column: 5
-token: NEWLINE
-  line: 2
-  column: 0
-token: IDENTIFIER
-  value: x123
-  line: 2
-  column: 1
-token: IDENTIFIER
-  value: y_a
-  line: 2
-  column: 6
-token: IDENTIFIER
-  value: z_78_b
-  line: 2
-  column: 10
-token: END
-  line: 2
-  column: 16
+IDENTIFIER x
+IDENTIFIER y
+IDENTIFIER z
+NEWLINE
+IDENTIFIER x123
+IDENTIFIER y_a
+IDENTIFIER z_78_b
+END
 ====
 
 ````
@@ -176,27 +86,12 @@ Numbers.
 456.7809
 000
 ----
-token: NUMBER
-  value: 123
-  line: 1
-  column: 1
-token: NEWLINE
-  line: 2
-  column: 0
-token: NUMBER
-  value: 456.7809
-  line: 2
-  column: 1
-token: NEWLINE
-  line: 3
-  column: 0
-token: NUMBER
-  value: 000
-  line: 3
-  column: 1
-token: END
-  line: 3
-  column: 4
+NUMBER 123
+NEWLINE
+NUMBER 456.7809
+NEWLINE
+NUMBER 000
+END
 ====
 
 ````
@@ -216,41 +111,17 @@ Strings.
 eating carrots")
 "dyno chugs juice"
 ----
-token: STRING
-  value: "anya likes to play"
-  line: 1
-  column: 1
-token: NEWLINE
-  line: 2
-  column: 0
-token: STRING
-  value: "boren is cool"
-  line: 2
-  column: 1
-token: NEWLINE
-  line: 3
-  column: 0
-token: LEFT_PAREN
-  line: 3
-  column: 1
-token: STRING
-  value: "carot loves
+STRING "anya likes to play"
+NEWLINE
+STRING "boren is cool"
+NEWLINE
+LEFT_PAREN
+STRING "carot loves
 eating carrots"
-  line: 3
-  column: 2
-token: RIGHT_PAREN
-  line: 4
-  column: 16
-token: NEWLINE
-  line: 5
-  column: 0
-token: STRING
-  value: "dyno chugs juice"
-  line: 5
-  column: 1
-token: END
-  line: 5
-  column: 19
+RIGHT_PAREN
+NEWLINE
+STRING "dyno chugs juice"
+END
 ====
 
 ````
@@ -270,61 +141,22 @@ Newlines are skipped within parenthesis.
  fyre)
 goro
 ----
-token: LEFT_PAREN
-  line: 1
-  column: 1
-token: IDENTIFIER
-  value: anya
-  line: 1
-  column: 2
-token: COMMA
-  line: 1
-  column: 6
-token: IDENTIFIER
-  value: boren
-  line: 1
-  column: 8
-token: COMMA
-  line: 1
-  column: 13
-token: IDENTIFIER
-  value: carot
-  line: 2
-  column: 2
-token: COMMA
-  line: 2
-  column: 7
-token: IDENTIFIER
-  value: dyno
-  line: 2
-  column: 9
-token: COMMA
-  line: 2
-  column: 13
-token: IDENTIFIER
-  value: esha
-  line: 2
-  column: 15
-token: COMMA
-  line: 2
-  column: 19
-token: IDENTIFIER
-  value: fyre
-  line: 3
-  column: 2
-token: RIGHT_PAREN
-  line: 3
-  column: 6
-token: NEWLINE
-  line: 4
-  column: 0
-token: IDENTIFIER
-  value: goro
-  line: 4
-  column: 1
-token: END
-  line: 4
-  column: 5
+LEFT_PAREN
+IDENTIFIER anya
+COMMA
+IDENTIFIER boren
+COMMA
+IDENTIFIER carot
+COMMA
+IDENTIFIER dyno
+COMMA
+IDENTIFIER esha
+COMMA
+IDENTIFIER fyre
+RIGHT_PAREN
+NEWLINE
+IDENTIFIER goro
+END
 ====
 
 ````

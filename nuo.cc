@@ -154,7 +154,7 @@ String getTokenizerTestActualResult(const TestCase& testCase) {
     if (!token.ok) {
       return token.error;
     }
-    result << token.value.toString();
+    result << token.value.toString(testCase.input);
     if (token.value.type == TokenType::END) {
       break;
     }

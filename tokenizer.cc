@@ -40,28 +40,35 @@ String tokenTypeToString(TokenType type) {
   return tokenTypeString[static_cast<int>(type)];
 }
 
+// Output token from tokenizer.
 struct Token {
   TokenType type;
-  StringView value;
-  int line;
-  int column;
+  int start;
+  int end;
 
-  String toString() {
-    bool showValue = false;
+  String toString(StringView source) {
+    bool showText = false;
     if (this->type == TokenType::IDENTIFIER ||
         this->type == TokenType::NUMBER || this->type == TokenType::STRING) {
-      showValue = true;
+      showText = true;
     }
 
     StringStream output;
-    output << "token: " << tokenTypeToString(this->type) << '\n';
-    if (showValue) {
-      output << "  value: " << this->value << '\n';
+    output << tokenTypeToString(this->type);
+    if (showText) {
+      output << " ";
+      for (int i = this->start; i < this->end; i++) {
+        output << source[i];
+      }
     }
-    output << "  line: " << this->line << '\n';
-    output << "  column: " << this->column;
     return output.str();
   }
+};
+
+// Used when printing error messages.
+struct TokenLocation {
+  int line;
+  int col;
 };
 
 struct Tokenizer {
@@ -73,10 +80,6 @@ struct Tokenizer {
   int end = 0;
   // Number of open parenthesis we see so far.
   int openParenCount = 0;
-  // Line number we are currently on.
-  int line = 1;
-  // Index to the start of the current line.
-  int lineStart = 0;
 
   Tokenizer(StringView code) : code(code) {}
 
@@ -93,7 +96,6 @@ struct Tokenizer {
 
     char c = this->getChar();
     if (c == '\n') {
-      this->advanceLine();
       return Ok(this->makeToken(TokenType::NEWLINE));
     } else if (this->isAlpha(c)) {
       return Ok(this->makeIdentifierToken());
@@ -157,8 +159,24 @@ struct Tokenizer {
       return Ok(this->makeToken(TokenType::MINUS));
     }
 
+    TokenLocation loc = this->getTokenLocation();
     return Error("Ran into an unexpected character '{}' at line {} column {}",
-                 c, this->line, this->end);
+                 c, loc.line, loc.col);
+  }
+
+  // Calculate the location of the current token. It's easier to do this
+  // rather than keeping track of line and column as we tokenize, especially if
+  // the only time we need location info is when outputting an error message.
+  TokenLocation getTokenLocation() {
+    int lineNumber = 1;
+    int lineStartIndex = 0;
+    for (int i = 0; i <= this->start; i++) {
+      if (this->code[i] == '\n') {
+        lineNumber += 1;
+        lineStartIndex = i;
+      }
+    }
+    return {.line = lineNumber, .col = this->start - lineStartIndex + 1};
   }
 
   // Peeks at the next character without consuming it.
@@ -177,15 +195,6 @@ struct Tokenizer {
   // Whether or not we've reached the end of the code.
   bool isAtEnd() { return this->end >= this->code.length(); }
 
-  // Tracks state for moving to the next line.
-  void advanceLine() {
-    this->line++;
-    this->lineStart = this->end;
-  }
-
-  // Returns the column the current token starts at.
-  int getTokenColumn() { return this->start - this->lineStart + 1; }
-
   bool isAlpha(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
   }
@@ -202,7 +211,6 @@ struct Tokenizer {
       // Consume any newline characters if we are within a parenthesis.
       else if (c == '\n' && this->openParenCount > 0) {
         this->consumeChar();
-        this->advanceLine();
       } else {
         break;
       }
@@ -210,14 +218,7 @@ struct Tokenizer {
   }
 
   Token makeToken(TokenType type) {
-    return Token{.type = type,
-                 .value = this->makeTokenValue(),
-                 .line = this->line,
-                 .column = this->getTokenColumn()};
-  }
-
-  StringView makeTokenValue() {
-    return StringView(&this->code[this->start], this->end - this->start);
+    return Token{.type = type, .start = this->start, .end = this->end};
   }
 
   Token makeIdentifierToken() {
@@ -231,7 +232,8 @@ struct Tokenizer {
   }
 
   TokenType getIdentifierTokenType() {
-    StringView value = this->makeTokenValue();
+    StringView value =
+        StringView(&this->code[this->start], this->end - this->start);
     if (value == "fn") {
       return TokenType::FN;
     } else if (value == "if") {
@@ -258,10 +260,11 @@ struct Tokenizer {
     if (this->peekChar() == '.') {
       this->consumeChar();
       if (!this->isDigit(this->peekChar())) {
+        TokenLocation loc = this->getTokenLocation();
         return Error(
             "Unexpected character '{}' after number decimal at line {} column "
             "{}",
-            this->peekChar(), this->line, this->end + 1);
+            this->peekChar(), loc.line, this->end + 1);
       }
       consumeNumberChars();
     }
@@ -275,34 +278,19 @@ struct Tokenizer {
   }
 
   Result<Token> makeStringToken() {
-    int startLine = this->line;
-    int startColumn = getTokenColumn();
-    int endLine = this->line;
-    int endLineStart = this->lineStart;
     // Consume characters until we reach the end of the string or the end of the
     // file.
     while (!this->isAtEnd() && this->peekChar() != '"') {
-      // We allow multi-line strings so increment line number here.
-      if (this->peekChar() == '\n') {
-        this->consumeChar();
-        // NOTE: Don't update line info with advanceLine() since we need to
-        //       make the multi-line string token with the start line info.
-        endLine++;
-        endLineStart = this->end;
-        continue;
-      }
       this->consumeChar();
     }
     // Return string token only if we've truly reached the end of the string.
     if (!this->isAtEnd() && this->peekChar() == '"') {
       this->consumeChar();
       Token stringToken = this->makeToken(TokenType::STRING);
-      // Update line info, now that we have made the string token.
-      this->line = endLine;
-      this->lineStart = endLineStart;
       return Ok(stringToken);
     }
+    TokenLocation loc = this->getTokenLocation();
     return Error("Unterminated string that started at line {} column {}.",
-                 startLine, startColumn);
+                 loc.line, loc.col);
   }
 };
