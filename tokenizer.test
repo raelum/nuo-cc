@@ -64,10 +64,11 @@ END
 ====
 
 ````
-User-defined identifiers.
+User-defined identifiers, including ones similar to keywords.
 ````
 x y z
 x123 y_a z_78_b
+fora elifa returnal elsee
 ----
 IDENTIFIER x
 IDENTIFIER y
@@ -76,6 +77,11 @@ NEWLINE
 IDENTIFIER x123
 IDENTIFIER y_a
 IDENTIFIER z_78_b
+NEWLINE
+IDENTIFIER fora
+IDENTIFIER elifa
+IDENTIFIER returnal
+IDENTIFIER elsee
 END
 ====
 

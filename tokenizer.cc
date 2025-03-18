@@ -98,6 +98,9 @@ struct Tokenizer {
     if (c == '\n') {
       return Ok(this->makeToken(TokenType::NEWLINE));
     } else if (this->isAlpha(c)) {
+      // Place end back to beginning of token, since makeIdentifierToken needs
+      // to see all characters to decide if it is a keyword.
+      this->end--;
       return Ok(this->makeIdentifierToken());
     } else if (this->isDigit(c)) {
       return this->makeNumberToken();
@@ -192,6 +195,15 @@ struct Tokenizer {
     return this->code[currentEnd];
   }
 
+  // Consumes the next character if it matches the given one and return true.
+  bool matchChar(char c) {
+    if (this->peekChar() == c) {
+      this->consumeChar();
+      return true;
+    }
+    return false;
+  }
+
   // Whether or not we've reached the end of the code.
   bool isAtEnd() { return this->end >= this->code.length(); }
 
@@ -221,36 +233,99 @@ struct Tokenizer {
     return Token{.type = type, .start = this->start, .end = this->end};
   }
 
-  Token makeIdentifierToken() {
-    // Consume all alphabet or digit tokens. The first character was already
-    // verified to be an alphabet before this function was called.
-    while (!this->isAtEnd() && (this->isAlpha(this->peekChar()) ||
-                                this->isDigit(this->peekChar()))) {
-      this->consumeChar();
-    }
-    return this->makeToken(this->getIdentifierTokenType());
+  bool isIdentifierChar() {
+    return this->isAlpha(this->peekChar()) || this->isDigit(this->peekChar());
   }
 
-  TokenType getIdentifierTokenType() {
-    StringView value =
-        StringView(&this->code[this->start], this->end - this->start);
-    if (value == "fn") {
-      return TokenType::FN;
-    } else if (value == "if") {
-      return TokenType::IF;
-    } else if (value == "elif") {
-      return TokenType::ELIF;
-    } else if (value == "else") {
-      return TokenType::ELSE;
-    } else if (value == "for") {
-      return TokenType::FOR;
-    } else if (value == "return") {
-      return TokenType::RETURN;
-    } else if (value == "int") {
-      return TokenType::INT;
-    } else {
-      return TokenType::IDENTIFIER;
+  Token makeIdentifierToken() {
+    if (this->matchChar('e')) {
+      // token: e
+      if (this->matchChar('l')) {
+        // token: el
+        if (this->matchChar('i')) {
+          // token: eli
+          if (this->matchChar('f')) {
+            // token: elif
+            if (!this->isIdentifierChar()) {
+              // token: elif<end>
+              return this->makeToken(TokenType::ELIF);
+            }
+          }
+        } else if (this->matchChar('s')) {
+          // token: els
+          if (this->matchChar('e')) {
+            // token: else
+            if (!this->isIdentifierChar()) {
+              // token: else<end>
+              return this->makeToken(TokenType::ELSE);
+            }
+          }
+        }
+      }
+    } else if (this->matchChar('f')) {
+      // token: f
+      if (this->matchChar('n')) {
+        // token: fn
+        if (!this->isIdentifierChar()) {
+          // token: fn<end>
+          return this->makeToken(TokenType::FN);
+        }
+      } else if (this->matchChar('o')) {
+        // token: fo
+        if (this->matchChar('r')) {
+          // token: for
+          if (!this->isIdentifierChar()) {
+            // token: for<end>
+            return this->makeToken(TokenType::FOR);
+          }
+        }
+      }
+    } else if (this->matchChar('i')) {
+      // token: i
+      if (this->matchChar('f')) {
+        // token: if
+        if (!this->isIdentifierChar()) {
+          // token: if<end>
+          return this->makeToken(TokenType::IF);
+        }
+      } else if (this->matchChar('n')) {
+        // token: in
+        if (this->matchChar('t')) {
+          // token: int
+          if (!this->isIdentifierChar()) {
+            // token: int<end>
+            return this->makeToken(TokenType::INT);
+          }
+        }
+      }
+    } else if (this->matchChar('r')) {
+      // token: r
+      if (this->matchChar('e')) {
+        // token: re
+        if (this->matchChar('t')) {
+          // token: ret
+          if (this->matchChar('u')) {
+            // token: retu
+            if (this->matchChar('r')) {
+              // token: retur
+              if (this->matchChar('n')) {
+                // token: return
+                if (!this->isIdentifierChar()) {
+                  // token: return<end>
+                  return this->makeToken(TokenType::RETURN);
+                }
+              }
+            }
+          }
+        }
+      }
     }
+    // Since we didn't match any keywords, we have a user-defined identifier.
+    // Consume all remaining alphabet or digit tokens.
+    while (!this->isAtEnd() && this->isIdentifierChar()) {
+      this->consumeChar();
+    }
+    return this->makeToken(TokenType::IDENTIFIER);
   }
 
   Result<Token> makeNumberToken() {
