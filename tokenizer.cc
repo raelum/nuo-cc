@@ -1,3 +1,6 @@
+#ifndef TOKENIZER_CC
+#define TOKENIZER_CC
+
 #include "builtins.cc"
 
 // Token Type enum and their string names for debugging.
@@ -36,7 +39,7 @@
   GENERATOR(STRING)
 enum class TokenType { FOREACH_TOKEN_TYPE(ENUM_GENERATOR) };
 static const char* tokenTypeString[] = {FOREACH_TOKEN_TYPE(STRING_GENERATOR)};
-String tokenTypeToString(TokenType type) {
+StringView tokenTypeToString(TokenType type) {
   return tokenTypeString[static_cast<int>(type)];
 }
 
@@ -66,7 +69,7 @@ struct Token {
 };
 
 // Used when printing error messages.
-struct TokenLocation {
+struct Location {
   int line;
   int col;
 };
@@ -162,25 +165,29 @@ struct Tokenizer {
       return Ok(this->makeToken(TokenType::MINUS));
     }
 
-    TokenLocation loc = this->getTokenLocation();
+    Location loc = this->getLocation();
     return Error("Ran into an unexpected character '{}' at line {} column {}",
                  c, loc.line, loc.col);
   }
 
-  // Calculate the location of the current token. It's easier to do this
-  // rather than keeping track of line and column as we tokenize, especially if
-  // the only time we need location info is when outputting an error message.
-  TokenLocation getTokenLocation() {
+  // Get the location of the given start position in the code. It's easier to do
+  // this rather than keeping track of line and column as we tokenize,
+  // especially if the only time we need location info is when outputting an
+  // error message.
+  Location getLocation(int start) {
     int lineNumber = 1;
     int lineStartIndex = 0;
-    for (int i = 0; i <= this->start; i++) {
+    for (int i = 0; i <= start; i++) {
       if (this->code[i] == '\n') {
         lineNumber += 1;
-        lineStartIndex = i;
+        lineStartIndex = i + 1;
       }
     }
-    return {.line = lineNumber, .col = this->start - lineStartIndex + 1};
+    return {.line = lineNumber, .col = start - lineStartIndex + 1};
   }
+
+  // Get the location of the token currently being processed.
+  Location getLocation() { return this->getLocation(this->start); }
 
   // Peeks at the next character without consuming it.
   char peekChar() { return this->code[this->end]; }
@@ -335,7 +342,7 @@ struct Tokenizer {
     if (this->peekChar() == '.') {
       this->consumeChar();
       if (!this->isDigit(this->peekChar())) {
-        TokenLocation loc = this->getTokenLocation();
+        Location loc = this->getLocation();
         return Error(
             "Unexpected character '{}' after number decimal at line {} column "
             "{}",
@@ -364,8 +371,10 @@ struct Tokenizer {
       Token stringToken = this->makeToken(TokenType::STRING);
       return Ok(stringToken);
     }
-    TokenLocation loc = this->getTokenLocation();
+    Location loc = this->getLocation();
     return Error("Unterminated string that started at line {} column {}.",
                  loc.line, loc.col);
   }
 };
+
+#endif  // TOKENIZER_CC

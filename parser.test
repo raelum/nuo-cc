@@ -1,0 +1,15 @@
+````
+Hello world.
+````
+fn main() {
+  print("Hello world!")
+}
+----
+FunctionDeclaration
+  - name: main
+  - params:
+  - returnType: VOID
+  - StatementBlock:
+    - FunctionCall: print
+      - "Hello world!"
+====

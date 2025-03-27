@@ -1,9 +1,10 @@
 #ifndef NUO_CC
 #define NUO_CC
 
-// Run code: clang++ -std=c++20 nuo.cc -o build/nuo && ./build/nuo
+// Run code: clang++ -Wall -std=c++20 nuo.cc -o build/nuo && ./build/nuo
 #include "builtins.cc"
 #include "file.cc"
+#include "parser.cc"
 #include "tokenizer.cc"
 
 int getLineEnd(StringView text, int lineStart) {
@@ -163,10 +164,27 @@ String getTokenizerTestActualResult(const TestCase& testCase) {
   return result.str();
 }
 
+String getParserTestActualResult(const TestCase& testCase) {
+  Parser parser(testCase.input);
+  Result<Program> program = parser.parse();
+  if (!program.ok) {
+    return program.error;
+  }
+  return program.value.toString();
+}
+
 Vector<String> getTokenizerTestActualResults(Vector<TestCase>& testCases) {
   Vector<String> results;
   for (const auto& testCase : testCases) {
     results.push_back(getTokenizerTestActualResult(testCase));
+  }
+  return results;
+}
+
+Vector<String> getParserTestActualResults(Vector<TestCase>& testCases) {
+  Vector<String> results;
+  for (const auto& testCase : testCases) {
+    results.push_back(getParserTestActualResult(testCase));
   }
   return results;
 }
@@ -217,10 +235,41 @@ Result<None> runTokenizerTests() {
   return Ok();
 }
 
+Result<None> runParserTests() {
+  TRY(String testFile, readFile("parser.test"));
+  Vector<StringView> tests = getTests(testFile);
+  TRY(Vector<TestCase> testCases, getTestCases(tests));
+  Vector<String> actualResults = getParserTestActualResults(testCases);
+
+  // Write updated spec tests.
+  String updatedSpecTests = generateSpecTests(testCases, actualResults);
+  TRY(writeFile("build/parser.test", updatedSpecTests));
+
+  // Check if the actual results match expected ones.
+  bool testsPassed = true;
+  for (int i = 0; i < testCases.size(); i++) {
+    if (testCases[i].result != actualResults[i]) {
+      testsPassed = false;
+      break;
+    }
+  }
+  if (testsPassed) {
+    print("Parser tests passed!");
+  } else {
+    print("Parser tests failed.");
+  }
+  return Ok();
+}
+
 int main() {
-  Result<None> result = runTokenizerTests();
-  if (!result.ok) {
-    print("ERROR: {}", result.error);
+  Result<None> tokenizerTestResult = runTokenizerTests();
+  if (!tokenizerTestResult.ok) {
+    print("ERROR: {}", tokenizerTestResult.error);
+  }
+
+  Result<None> parserTestResult = runParserTests();
+  if (!parserTestResult.ok) {
+    print("ERROR: {}", parserTestResult.error);
   }
 }
 

@@ -19,6 +19,10 @@ using IfStream = std::ifstream;
 using OfStream = std::ofstream;
 template <typename T>
 using Optional = std::optional<T>;
+template <typename T>
+using Unique = std::unique_ptr<T>;
+template <class... _Types>
+using Variant = std::variant<_Types...>;
 
 // Convenience print function.
 template <typename T>
@@ -51,7 +55,7 @@ struct None {};
 // Creates an Ok result with the given value.
 template <typename T>
 Result<T> Ok(T value) {
-  return Result<T>{.ok = true, .value = value};
+  return Result<T>{.ok = true, .value = std::move(value)};
 };
 
 // Creates an Ok result for void functions.
