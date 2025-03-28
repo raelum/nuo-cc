@@ -30,6 +30,12 @@ String typeToString(Type type) {
   return "Unexpected Type when converting to string.";
 }
 
+void indent(StringStream& buffer, int level) {
+  for (int i = 0; i < level; i++) {
+    buffer << "  ";
+  }
+}
+
 // Forward declare Ast Nodes that are used in Statement or Expression variants.
 struct VariableDeclaration;
 struct VariableReference;
@@ -37,11 +43,11 @@ struct FunctionCall;
 struct StringLiteral;
 
 using Statement = Variant<Unique<VariableDeclaration>, Unique<FunctionCall>>;
-String statementToString(Statement& statement);
+String statementToString(Statement& statement, int level);
 
 using Expression = Variant<Unique<VariableReference>, Unique<FunctionCall>,
                            Unique<StringLiteral>>;
-String expressionToString(Expression& expression);
+String expressionToString(Expression& expression, int level);
 
 struct FunctionParameter {
   StringView name;
@@ -77,11 +83,14 @@ struct FunctionCall {
         new FunctionCall{.name = std::move(name), .args = std::move(args)});
   }
 
-  String toString() {
+  String toString(int level) {
     StringStream buffer;
-    buffer << "    - FunctionCall: " << this->name << "\n";
+
+    indent(buffer, level);
+    buffer << "FunctionCall: " << this->name << "\n";
+
     for (int i = 0; i < this->args.size(); i++) {
-      buffer << "      - " << expressionToString(this->args[i]);
+      buffer << expressionToString(this->args[i], level + 1);
     }
     return buffer.str();
   }
@@ -94,8 +103,9 @@ struct StringLiteral {
     return Unique<StringLiteral>(new StringLiteral{.value = std::move(value)});
   }
 
-  String toString() {
+  String toString(int level) {
     StringStream buffer;
+    indent(buffer, level);
     buffer << this->value;
     return buffer.str();
   }
@@ -104,11 +114,10 @@ struct StringLiteral {
 struct StatementBlock {
   Vector<Statement> statements;
 
-  String toString() {
+  String toString(int level) {
     StringStream buffer;
-    buffer << "  - StatementBlock:\n";
     for (int i = 0; i < this->statements.size(); i++) {
-      buffer << statementToString(this->statements[i]);
+      buffer << statementToString(this->statements[i], level);
     }
     return buffer.str();
   }
@@ -120,17 +129,28 @@ struct FunctionDeclaration {
   Type returnType;
   StatementBlock body;
 
-  String toString() {
+  String toString(int level) {
     StringStream buffer;
-    buffer << "FunctionDeclaration\n";
-    buffer << "  - name: " << this->name << "\n";
-    buffer << "  - params:\n";
+
+    indent(buffer, level);
+    buffer << "FunctionDeclaration: " << this->name << "\n";
+
+    indent(buffer, level + 1);
+    buffer << "params:\n";
+
     for (int i = 0; i < this->params.size(); i++) {
-      buffer << "    - " << this->params[i].name << ": "
+      indent(buffer, level + 2);
+      buffer << this->params[i].name << ": "
              << typeToString(this->params[i].type) << "\n";
     }
-    buffer << "  - returnType: " << typeToString(returnType) << "\n";
-    buffer << this->body.toString();
+
+    indent(buffer, level + 1);
+    buffer << "returnType: " << typeToString(returnType) << "\n";
+
+    indent(buffer, level + 1);
+    buffer << "body:\n";
+    buffer << this->body.toString(level + 2);
+
     return buffer.str();
   }
 };
@@ -141,7 +161,7 @@ struct Program {
   String toString() {
     StringStream buffer;
     for (int i = 0; i < this->functions.size(); i++) {
-      buffer << this->functions[i].toString();
+      buffer << this->functions[i].toString(0);
       if (i < this->functions.size() - 1) {
         buffer << "\n";
       }
@@ -150,18 +170,18 @@ struct Program {
   }
 };
 
-String statementToString(Statement& statement) {
+String statementToString(Statement& statement, int level) {
   if (std::holds_alternative<Unique<FunctionCall>>(statement)) {
-    return std::get<Unique<FunctionCall>>(statement)->toString();
+    return std::get<Unique<FunctionCall>>(statement)->toString(level);
   }
   return "Unexpected Statement when converting to String.";
 }
 
-String expressionToString(Expression& expression) {
+String expressionToString(Expression& expression, int level) {
   if (std::holds_alternative<Unique<FunctionCall>>(expression)) {
-    return std::get<Unique<FunctionCall>>(expression)->toString();
+    return std::get<Unique<FunctionCall>>(expression)->toString(level);
   } else if (std::holds_alternative<Unique<StringLiteral>>(expression)) {
-    return std::get<Unique<StringLiteral>>(expression)->toString();
+    return std::get<Unique<StringLiteral>>(expression)->toString(level);
   }
   return "Unexpected Expression when converting to String.";
 }

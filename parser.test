@@ -5,11 +5,10 @@ fn main() {
   print("Hello world!")
 }
 ----
-FunctionDeclaration
-  - name: main
-  - params:
-  - returnType: VOID
-  - StatementBlock:
-    - FunctionCall: print
-      - "Hello world!"
+FunctionDeclaration: main
+  params:
+  returnType: VOID
+  body:
+    FunctionCall: print
+      "Hello world!"
 ====
