@@ -42,7 +42,7 @@ void print(std::format_string<Args...> fmt, Args&&... args) {
 
 // Result type to gracefully handle errors.
 template <typename T>
-struct Result {
+struct [[nodiscard]] Result {
   bool ok;
   T value;
   String error;

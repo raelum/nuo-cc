@@ -46,8 +46,8 @@ StringView tokenTypeToString(TokenType type) {
 // Output token from tokenizer.
 struct Token {
   TokenType type;
-  int start;
-  int end;
+  size_t start;
+  size_t end;
 
   String toString(StringView source) {
     bool showText = false;
@@ -60,7 +60,7 @@ struct Token {
     output << tokenTypeToString(this->type);
     if (showText) {
       output << " ";
-      for (int i = this->start; i < this->end; i++) {
+      for (size_t i = this->start; i < this->end; i++) {
         output << source[i];
       }
     }
@@ -78,11 +78,11 @@ struct Tokenizer {
   // Nuo code that is being tokenized.
   StringView code;
   // Index to the start of the current token.
-  int start = 0;
+  size_t start = 0;
   // Index to the end of the current token.
-  int end = 0;
+  size_t end = 0;
   // Number of open parenthesis we see so far.
-  int openParenCount = 0;
+  size_t openParenCount = 0;
 
   Tokenizer(StringView code) : code(code) {}
 

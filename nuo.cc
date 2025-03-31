@@ -1,32 +1,36 @@
 #ifndef NUO_CC
 #define NUO_CC
 
-// Run code: clang++ -Wall -std=c++20 nuo.cc -o build/nuo && ./build/nuo
+/*
+Run code:
+clang++ -Wextra -Werror -std=c++20 nuo.cc -o build/nuo && ./build/nuo
+*/
 #include "builtins.cc"
 #include "file.cc"
 #include "parser.cc"
 #include "tokenizer.cc"
 
-int getLineEnd(StringView text, int lineStart) {
+int getLineEnd(StringView text, size_t lineStart) {
   // Exit early if we are end of file or already see a newline.
   if (lineStart >= text.length() || text[lineStart] == '\n') {
     return lineStart;
   }
   // Find the next newline.
-  int lineEnd = lineStart + 1;
+  size_t lineEnd = lineStart + 1;
   while (lineEnd < text.length() && text[lineEnd] != '\n') {
     lineEnd++;
   }
   return lineEnd;
 }
 
-bool isCharacterLine(StringView text, int lineStart, int lineEnd, char c) {
+bool isCharacterLine(StringView text, size_t lineStart, size_t lineEnd,
+                     char c) {
   // Verify line length.
   if (lineEnd - lineStart != 4) {
     return false;
   }
   // Verify all characters are dashes.
-  for (int i = lineStart; i < lineEnd; i++) {
+  for (size_t i = lineStart; i < lineEnd; i++) {
     if (text[i] != c) {
       return false;
     }
@@ -34,25 +38,25 @@ bool isCharacterLine(StringView text, int lineStart, int lineEnd, char c) {
   return true;
 }
 
-bool isTickLine(StringView text, int lineStart, int lineEnd) {
+bool isTickLine(StringView text, size_t lineStart, size_t lineEnd) {
   return isCharacterLine(text, lineStart, lineEnd, '`');
 }
 
-bool isDashLine(StringView text, int lineStart, int lineEnd) {
+bool isDashLine(StringView text, size_t lineStart, size_t lineEnd) {
   return isCharacterLine(text, lineStart, lineEnd, '-');
 }
 
-bool isEqualLine(StringView text, int lineStart, int lineEnd) {
+bool isEqualLine(StringView text, size_t lineStart, size_t lineEnd) {
   return isCharacterLine(text, lineStart, lineEnd, '=');
 }
 
 Vector<StringView> getTests(String& specTestFile) {
   Vector<StringView> tests;
-  int testStart = 0;
-  int lineStart = 0;
+  size_t testStart = 0;
+  size_t lineStart = 0;
   while (lineStart < specTestFile.length()) {
     // Find the end of the current line.
-    int lineEnd = getLineEnd(specTestFile, lineStart);
+    size_t lineEnd = getLineEnd(specTestFile, lineStart);
 
     // Add test when finding a test break line. Skip equal line right at the
     // beginning of the file.
@@ -64,7 +68,7 @@ Vector<StringView> getTests(String& specTestFile) {
     }
     // Add final test at end of file that isn't followed by a test break line.
     else if (lineEnd + 1 >= specTestFile.length()) {
-      int testSize = lineEnd - testStart;
+      size_t testSize = lineEnd - testStart;
       tests.push_back(StringView(&specTestFile[testStart], testSize));
     }
 
@@ -81,8 +85,8 @@ struct TestCase {
 };
 
 Result<TestCase> getTestCase(StringView test) {
-  int lineStart = 0;
-  int lineEnd = 0;
+  size_t lineStart = 0;
+  size_t lineEnd = 0;
 
   // Consume any preceding newlines.
   while (test[lineStart] == '\n') {
@@ -96,7 +100,7 @@ Result<TestCase> getTestCase(StringView test) {
   }
 
   // Find end of description block.
-  int descriptionStart = lineEnd + 1;
+  size_t descriptionStart = lineEnd + 1;
   lineStart = descriptionStart;
   while (lineStart < test.length()) {
     lineEnd = getLineEnd(test, lineStart);
@@ -111,10 +115,10 @@ Result<TestCase> getTestCase(StringView test) {
     return Error("Didn't find end of description in test:\n{}", test);
   }
 
-  int descriptionSize = lineStart - descriptionStart - 1;
+  size_t descriptionSize = lineStart - descriptionStart - 1;
 
   // Find the end of test input.
-  int inputStart = lineEnd + 1;
+  size_t inputStart = lineEnd + 1;
   lineStart = inputStart;
   while (lineStart < test.length()) {
     lineEnd = getLineEnd(test, lineStart);
@@ -192,7 +196,7 @@ Vector<String> getParserTestActualResults(Vector<TestCase>& testCases) {
 String generateSpecTests(Vector<TestCase>& testCases,
                          Vector<String>& actualResults) {
   StringStream specTests;
-  for (int i = 0; i < testCases.size(); i++) {
+  for (size_t i = 0; i < testCases.size(); i++) {
     specTests << "````\n";
     specTests << testCases[i].description << '\n';
     specTests << "````\n";
@@ -221,7 +225,7 @@ Result<None> runTokenizerTests() {
 
   // Check if the actual results match expected ones.
   bool testsPassed = true;
-  for (int i = 0; i < testCases.size(); i++) {
+  for (size_t i = 0; i < testCases.size(); i++) {
     if (testCases[i].result != actualResults[i]) {
       testsPassed = false;
       break;
@@ -247,7 +251,7 @@ Result<None> runParserTests() {
 
   // Check if the actual results match expected ones.
   bool testsPassed = true;
-  for (int i = 0; i < testCases.size(); i++) {
+  for (size_t i = 0; i < testCases.size(); i++) {
     if (testCases[i].result != actualResults[i]) {
       testsPassed = false;
       break;

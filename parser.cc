@@ -87,9 +87,8 @@ struct Parser {
       TRY(returnType, this->parseType());
     }
 
-    // Parse statement block, expecting a newline after it.
+    // Parse statement block.
     TRY(StatementBlock body, parseStatementBlock());
-    this->consumeToken(TokenType::NEWLINE);
 
     return Ok(FunctionDeclaration{.name = std::move(name),
                                   .params = std::move(parameters),
@@ -123,7 +122,7 @@ struct Parser {
     }
 
     // Consume closing parenthesis.
-    this->consumeToken(TokenType::RIGHT_PAREN);
+    TRY(this->consumeToken(TokenType::RIGHT_PAREN));
     return Ok(parameters);
   }
 
@@ -138,7 +137,7 @@ struct Parser {
 
   Result<StatementBlock> parseStatementBlock() {
     // Consume the opening brace.
-    this->consumeToken(TokenType::LEFT_BRACE);
+    TRY(this->consumeToken(TokenType::LEFT_BRACE));
 
     Vector<Statement> statements;
     while (true) {

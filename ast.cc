@@ -88,7 +88,7 @@ struct FunctionCall {
     indent(buffer, level);
     buffer << "FunctionCall: " << this->name << "\n";
 
-    for (int i = 0; i < this->args.size(); i++) {
+    for (size_t i = 0; i < this->args.size(); i++) {
       buffer << expressionToString(this->args[i], level + 1);
     }
     return buffer.str();
@@ -115,7 +115,7 @@ struct StatementBlock {
 
   String toString(int level) {
     StringStream buffer;
-    for (int i = 0; i < this->statements.size(); i++) {
+    for (size_t i = 0; i < this->statements.size(); i++) {
       buffer << statementToString(this->statements[i], level);
     }
     return buffer.str();
@@ -137,7 +137,7 @@ struct FunctionDeclaration {
     indent(buffer, level + 1);
     buffer << "params:\n";
 
-    for (int i = 0; i < this->params.size(); i++) {
+    for (size_t i = 0; i < this->params.size(); i++) {
       indent(buffer, level + 2);
       buffer << this->params[i].name << ": "
              << typeToString(this->params[i].type) << "\n";
@@ -159,7 +159,7 @@ struct Program {
 
   String toString() {
     StringStream buffer;
-    for (int i = 0; i < this->functions.size(); i++) {
+    for (size_t i = 0; i < this->functions.size(); i++) {
       buffer << this->functions[i].toString(0);
       if (i < this->functions.size() - 1) {
         buffer << "\n";
