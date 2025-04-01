@@ -5,6 +5,8 @@
 Run code:
 clang++ -Wextra -Werror -std=c++20 nuo.cc -o build/nuo && ./build/nuo
 */
+#include "ast.cc"
+#include "ast_printer.cc"
 #include "builtins.cc"
 #include "file.cc"
 #include "parser.cc"
@@ -174,7 +176,13 @@ String getParserTestActualResult(const TestCase& testCase) {
   if (!program.ok) {
     return program.error;
   }
-  return program.value.toString();
+  // Generate String from AST.
+  AstPrinter astPrinter;
+  Result<String> programString = astPrinter.print(program.value);
+  if (!programString.ok) {
+    return programString.error;
+  }
+  return programString.value;
 }
 
 Vector<String> getTokenizerTestActualResults(Vector<TestCase>& testCases) {
