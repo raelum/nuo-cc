@@ -18,7 +18,7 @@ struct SpecTest {
            String (*getActualResult)(const TestCase& testCase))
       : testFileName(testFileName), getActualResult(getActualResult) {}
 
-  Result<None> run() {
+  Result<bool> run() {
     TRY(String testFile, readFile(testFileName));
     Vector<StringView> tests = this->getTests(testFile);
     TRY(Vector<TestCase> testCases, this->getTestCases(tests));
@@ -37,12 +37,7 @@ struct SpecTest {
         break;
       }
     }
-    if (testsPassed) {
-      print("{}: PASSED", this->testFileName);
-    } else {
-      print("{}: FAILED", this->testFileName);
-    }
-    return Ok();
+    return Ok(testsPassed);
   }
 
   int getLineEnd(StringView text, size_t lineStart) {

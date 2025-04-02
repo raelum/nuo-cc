@@ -45,16 +45,40 @@ String getActualResultForParserTest(const TestCase& testCase) {
   return programString.value;
 }
 
+struct FailedTest {
+  StringView testFileName;
+  Optional<String> error;
+};
+
 int main() {
   Vector<SpecTest> tests = {
       SpecTest("tokenizer.test", getActualResultForTokenizerTest),
       SpecTest("parser.test", getActualResultForParserTest),
   };
+
+  Vector<FailedTest> failedTests;
   for (auto& test : tests) {
-    Result<None> testResult = test.run();
+    Result<bool> testResult = test.run();
     if (!testResult.ok) {
-      print("ERROR: {}", testResult.error);
-      break;
+      failedTests.push_back((FailedTest){.testFileName = test.testFileName,
+                                         .error = testResult.error});
+    } else if (!testResult.value) {
+      failedTests.push_back((FailedTest){.testFileName = test.testFileName,
+                                         .error = std::nullopt});
+    }
+  }
+
+  if (failedTests.empty()) {
+    print("All tests passed!");
+  } else {
+    print("The following tests failed:");
+    for (const auto& failedTest : failedTests) {
+      if (failedTest.error.has_value()) {
+        print("{} had an unexpected error:\n{}", failedTest.testFileName,
+              failedTest.error.value());
+      } else {
+        print("{}", failedTest.testFileName);
+      }
     }
   }
 }
