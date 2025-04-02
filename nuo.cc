@@ -178,7 +178,7 @@ String getParserTestActualResult(const TestCase& testCase) {
   }
   // Generate String from AST.
   AstPrinter astPrinter;
-  Result<String> programString = astPrinter.print(program.value);
+  Result<String> programString = astPrinter.printProgram(program.value);
   if (!programString.ok) {
     return programString.error;
   }

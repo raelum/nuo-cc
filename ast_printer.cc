@@ -7,12 +7,12 @@
 struct AstPrinter {
   StringStream out;
 
-  Result<String> print(const Program& program) {
+  Result<String> printProgram(const Program& node) {
     // Empty the output buffer in case this was called before.
     out.str("");
-    for (size_t i = 0; i < program.functions.size(); i++) {
-      TRY(this->print(program.functions[i], 0));
-      if (i < program.functions.size() - 1) {
+    for (size_t i = 0; i < node.functions.size(); i++) {
+      TRY(this->printFunctionDeclaration(node.functions[i], 0));
+      if (i < node.functions.size() - 1) {
         out << "\n";
       }
     }
@@ -25,94 +25,97 @@ struct AstPrinter {
     }
   }
 
-  Result<None> print(const FunctionDeclaration& funcDecl, int level) {
+  Result<None> printFunctionDeclaration(const FunctionDeclaration& node,
+                                        int level) {
     this->indent(level);
-    this->out << "FunctionDeclaration: " << funcDecl.name << "\n";
+    this->out << "FunctionDeclaration: " << node.name << "\n";
 
     this->indent(level + 1);
     this->out << "params:\n";
-
-    for (size_t i = 0; i < funcDecl.params.size(); i++) {
+    for (size_t i = 0; i < node.params.size(); i++) {
       this->indent(level + 2);
-      this->out << funcDecl.params[i].name << ": ";
-      TRY(this->print(funcDecl.params[i].type));
+      this->out << node.params[i].name << ": ";
+      TRY(this->printType(node.params[i].type));
       this->out << "\n";
     }
 
     this->indent(level + 1);
     this->out << "returnType: ";
-    TRY(this->print(funcDecl.returnType));
+    TRY(this->printType(node.returnType));
     this->out << "\n";
 
     this->indent(level + 1);
     this->out << "body:\n";
-    TRY(print(funcDecl.body, level + 2));
+    TRY(this->printStatementBlock(node.body, level + 2));
 
     return Ok();
   }
 
-  Result<None> print(const StatementBlock& block, int level) {
-    for (size_t i = 0; i < block.statements.size(); i++) {
-      TRY(this->print(block.statements[i], level));
+  Result<None> printStatementBlock(const StatementBlock& node, int level) {
+    for (size_t i = 0; i < node.statements.size(); i++) {
+      TRY(this->printStatement(node.statements[i], level));
     }
     return Ok();
   }
 
-  Result<None> print(const FunctionCall& functionCall, int level) {
+  Result<None> printFunctionCall(const FunctionCall& node, int level) {
     this->indent(level);
-    this->out << "FunctionCall: " << functionCall.name << "\n";
+    this->out << "FunctionCall: " << node.name << "\n";
 
-    for (size_t i = 0; i < functionCall.args.size(); i++) {
-      TRY(this->print(functionCall.args[i], level + 1));
+    for (size_t i = 0; i < node.args.size(); i++) {
+      TRY(this->printExpression(node.args[i], level + 1));
     }
     return Ok();
   }
 
-  void print(const StringLiteral& stringLiteral, int level) {
+  void printStringLiteral(const StringLiteral& node, int level) {
     this->indent(level);
-    this->out << stringLiteral.value;
+    this->out << node.value;
   }
 
-  Result<None> print(const Type& type) {
+  Result<None> printType(const Type& type) {
     if (std::holds_alternative<BaseType>(type)) {
-      this->print(std::get<BaseType>(type));
+      this->printBaseType(std::get<BaseType>(type));
       return Ok();
     } else if (std::holds_alternative<ListType>(type)) {
-      this->print(std::get<ListType>(type));
+      this->printListType(std::get<ListType>(type));
       return Ok();
     }
     return Error("Unexpected Type with index {} when printing AST.",
                  type.index());
   }
 
-  void print(const ListType& listType) {
+  void printListType(const ListType& listType) {
     this->out << "[";
-    this->print(listType.elementType);
+    this->printBaseType(listType.elementType);
     this->out << "]";
   }
 
-  void print(const BaseType& type) { this->out << baseTypeToString(type); }
+  void printBaseType(const BaseType& type) {
+    this->out << baseTypeToString(type);
+  }
 
-  Result<None> print(const Statement& statement, int level) {
-    if (std::holds_alternative<Unique<FunctionCall>>(statement)) {
-      TRY(this->print(*std::get<Unique<FunctionCall>>(statement).get(), level));
+  Result<None> printStatement(const Statement& node, int level) {
+    if (std::holds_alternative<Unique<FunctionCall>>(node)) {
+      TRY(this->printFunctionCall(*std::get<Unique<FunctionCall>>(node),
+                                  level));
       return Ok();
     }
     return Error("Unexpected Statement of index {} when converting to String.",
-                 statement.index());
+                 node.index());
   }
 
-  Result<None> print(const Expression& expression, int level) {
-    if (std::holds_alternative<Unique<FunctionCall>>(expression)) {
-      TRY(this->print(*std::get<Unique<FunctionCall>>(expression).get(),
-                      level));
+  Result<None> printExpression(const Expression& node, int level) {
+    if (std::holds_alternative<Unique<FunctionCall>>(node)) {
+      TRY(this->printFunctionCall(*std::get<Unique<FunctionCall>>(node),
+                                  level));
       return Ok();
-    } else if (std::holds_alternative<Unique<StringLiteral>>(expression)) {
-      this->print(*std::get<Unique<StringLiteral>>(expression).get(), level);
+    } else if (std::holds_alternative<Unique<StringLiteral>>(node)) {
+      this->printStringLiteral(*std::get<Unique<StringLiteral>>(node), level);
       return Ok();
     }
     return Error("Unexpected Expression of index {} when converting to String.",
-                 expression.index());
+                 node.index());
   }
 };
 
