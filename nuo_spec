@@ -29,6 +29,45 @@ type StringSlice {
   data: ^[Char]
 }
 
+// Struct fields are private by default. Make them public with pub.
+type Data {
+  pub x: Int
+}
+
+// All variables, struct fields, and function params are immutable by default
+// with a concise way to mark them as mutable.
+// Do you have any feedback on the following approach?
+
+// Immutable variable.
+x := 5
+
+// Mutable variable.
+'x := 5
+
+// Immutable struct field.
+type Data {
+  x: Int
+}
+
+// Mutable struct field.
+type Data {
+  'x: Int
+}
+
+// Immutable function param.
+fn use(x: &Int) { ... }
+
+// Pass immutable argument to function.
+'x := 5
+use(&x)
+
+// Mutable function param.
+fn use('x: &Int) { ... }
+
+// Pass mutable argument to function.
+'x := 5
+use('&x)
+
 // Pass by borrow. & can only be used in function params.
 // Can pass either stack or heap values by reference.
 //
@@ -86,8 +125,6 @@ for &v in values {
   // called function modifies values or
   inner_function(&values)
 }
-
-
 
 
 Areas for Clarification and Potential Challenges:
