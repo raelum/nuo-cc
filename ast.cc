@@ -24,8 +24,10 @@ struct VariableDeclaration;
 struct VariableReference;
 struct FunctionCall;
 struct StringLiteral;
+struct Return;
 
-using Statement = Variant<Unique<VariableDeclaration>, Unique<FunctionCall>>;
+using Statement =
+    Variant<Unique<VariableDeclaration>, Unique<FunctionCall>, Unique<Return>>;
 
 using Expression = Variant<Unique<VariableReference>, Unique<FunctionCall>,
                            Unique<StringLiteral>>;
@@ -70,6 +72,14 @@ struct StringLiteral {
 
   static Expression make(StringView value) {
     return Unique<StringLiteral>(new StringLiteral{.value = std::move(value)});
+  }
+};
+
+struct Return {
+  Optional<Expression> expression;
+
+  static Statement makeStatement(Optional<Expression> expression) {
+    return Unique<Return>(new Return{.expression = std::move(expression)});
   }
 };
 

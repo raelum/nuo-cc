@@ -1,4 +1,19 @@
 ````
+Main function with just return.
+````
+fn main() {
+  return
+}
+----
+FunctionDeclaration: main
+  params:
+  returnType: VOID
+  body:
+    Return:
+      VOID
+====
+
+````
 Hello world.
 ````
 fn main() {

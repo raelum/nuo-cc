@@ -14,11 +14,15 @@ struct Compiler {
     // Empty the output buffer in case this was called before.
     out.str("");
 
+    // Compile include headers.
     for (size_t i = 0; i < node.includes.size(); i++) {
       this->out << "#include <" << node.includes[i] << ">\n";
     }
-    this->out << "\n";
+    if (node.includes.size() > 0) {
+      this->out << "\n";
+    }
 
+    // Compile functions.
     for (size_t i = 0; i < node.functions.size(); i++) {
       TRY(this->compileFunctionDeclaration(node.functions[i]));
       if (i < node.functions.size() - 1) {
@@ -46,6 +50,47 @@ struct Compiler {
     TRY(this->compileStatementBlock(node.body));
 
     return Ok();
+  }
+
+  Result<None> compileStatementBlock(const StatementBlock& node) {
+    this->out << "{\n";
+    this->indent += INDENT_SIZE;
+    for (const auto& statement : node.statements) {
+      for (size_t i = 0; i < this->indent; i++) {
+        this->out << " ";
+      }
+      TRY(this->compileStatement(statement));
+      this->out << ";\n";
+    }
+    this->indent -= INDENT_SIZE;
+    this->out << "}";
+    return Ok();
+  }
+
+  Result<None> compileStatement(const Statement& node) {
+    if (std::holds_alternative<Unique<FunctionCall>>(node)) {
+      TRY(this->compileFunctionCall(*std::get<Unique<FunctionCall>>(node)));
+      return Ok();
+    }
+    if (std::holds_alternative<Unique<Return>>(node)) {
+      TRY(this->compileReturn(*std::get<Unique<Return>>(node)));
+      return Ok();
+    }
+    return Error("Unexpected Statement of index {} when compiling.",
+                 node.index());
+  }
+
+  Result<None> compileExpression(const Expression& node) {
+    if (std::holds_alternative<Unique<FunctionCall>>(node)) {
+      TRY(this->compileFunctionCall(*std::get<Unique<FunctionCall>>(node)));
+      return Ok();
+    }
+    if (std::holds_alternative<Unique<StringLiteral>>(node)) {
+      TRY(this->compileStringLiteral(*std::get<Unique<StringLiteral>>(node)));
+      return Ok();
+    }
+    return Error("Unexpected Expression of index {} when compiling.",
+                 node.index());
   }
 
   Result<None> compileType(const Type& type) {
@@ -78,30 +123,6 @@ struct Compiler {
     return Ok();
   }
 
-  Result<None> compileStatementBlock(const StatementBlock& node) {
-    this->out << "{\n";
-    this->indent += INDENT_SIZE;
-    for (const auto& statement : node.statements) {
-      for (size_t i = 0; i < this->indent; i++) {
-        this->out << " ";
-      }
-      TRY(this->compileStatement(statement));
-      this->out << ";\n";
-    }
-    this->indent -= INDENT_SIZE;
-    this->out << "}";
-    return Ok();
-  }
-
-  Result<None> compileStatement(const Statement& node) {
-    if (std::holds_alternative<Unique<FunctionCall>>(node)) {
-      TRY(this->compileFunctionCall(*std::get<Unique<FunctionCall>>(node)));
-      return Ok();
-    }
-    return Error("Unexpected Statement of index {} when compiling.",
-                 node.index());
-  }
-
   Result<None> compileFunctionCall(const FunctionCall& node) {
     this->out << node.name << "(";
     for (size_t i = 0; i < node.args.size(); i++) {
@@ -114,20 +135,18 @@ struct Compiler {
     return Ok();
   }
 
-  Result<None> compileExpression(const Expression& node) {
-    if (std::holds_alternative<Unique<FunctionCall>>(node)) {
-      TRY(this->compileFunctionCall(*std::get<Unique<FunctionCall>>(node)));
-      return Ok();
-    } else if (std::holds_alternative<Unique<StringLiteral>>(node)) {
-      this->compileStringLiteral(*std::get<Unique<StringLiteral>>(node));
-      return Ok();
-    }
-    return Error("Unexpected Expression of index {} when compiling.",
-                 node.index());
+  Result<None> compileStringLiteral(const StringLiteral& node) {
+    this->out << node.value;
+    return Ok();
   }
 
-  void compileStringLiteral(const StringLiteral& node) {
-    this->out << node.value;
+  Result<None> compileReturn(const Return& node) {
+    this->out << "return";
+    if (node.expression.has_value()) {
+      this->out << " ";
+      TRY(this->compileExpression(node.expression.value()));
+    }
+    return Ok();
   }
 };
 

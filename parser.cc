@@ -166,6 +166,10 @@ struct Parser {
       TRY(Statement statement, this->parseIdentifierStatement());
       TRY(this->consumeToken(TokenType::NEWLINE));
       return Ok(std::move(statement));
+    } else if (this->isToken(TokenType::RETURN)) {
+      TRY(Statement statement, this->parseReturnStatement());
+      TRY(this->consumeToken(TokenType::NEWLINE));
+      return Ok(std::move(statement));
     }
     // Fail for every other token type.
     Location loc = this->getLocation();
@@ -186,6 +190,16 @@ struct Parser {
     return Error(
         "Unexpected token {} at {}:{} when parsing identifier statement.",
         this->getTokenType(), loc.line, loc.col);
+  }
+
+  Result<Statement> parseReturnStatement() {
+    TRY(this->consumeToken(TokenType::RETURN));
+
+    Optional<Expression> expression = std::nullopt;
+    if (!this->isToken(TokenType::NEWLINE)) {
+      TRY(expression, this->parseExpression());
+    }
+    return Ok(Return::makeStatement(std::move(expression)));
   }
 
   Result<Vector<Expression>> parseFunctionCallArguments() {
