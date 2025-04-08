@@ -85,6 +85,7 @@ struct FunctionDeclaration {
 };
 
 struct Program {
+  Vector<String> includes;
   Vector<FunctionDeclaration> functions;
 };
 

@@ -5,9 +5,11 @@
 Run code:
 clang++ -Wextra -Werror -std=c++20 nuo.cc -o build/nuo && ./build/nuo
 */
+#include "analyzer.cc"
 #include "ast.cc"
 #include "ast_printer.cc"
 #include "builtins.cc"
+#include "compiler.cc"
 #include "file.cc"
 #include "parser.cc"
 #include "spec_test.cc"
@@ -31,6 +33,7 @@ String getActualResultForTokenizerTest(const TestCase& testCase) {
 }
 
 String getActualResultForParserTest(const TestCase& testCase) {
+  // Parse code.
   Parser parser(testCase.input);
   Result<Program> program = parser.parse();
   if (!program.ok) {
@@ -45,6 +48,28 @@ String getActualResultForParserTest(const TestCase& testCase) {
   return programString.value;
 }
 
+String getActualResultForCompilerTest(const TestCase& testCase) {
+  // Parse code.
+  Parser parser(testCase.input);
+  Result<Program> parseResult = parser.parse();
+  if (!parseResult.ok) {
+    return parseResult.error;
+  }
+  // Analyze code.
+  Analyzer analyzer;
+  Result<None> analyzerResult = analyzer.analyzeProgram(parseResult.value);
+  if (!analyzerResult.ok) {
+    return analyzerResult.error;
+  }
+  // Compile code.
+  Compiler compiler;
+  Result<String> compilerResult = compiler.compileProgram(parseResult.value);
+  if (!compilerResult.ok) {
+    return compilerResult.error;
+  }
+  return compilerResult.value;
+}
+
 struct FailedTest {
   StringView testFileName;
   Optional<String> error;
@@ -54,6 +79,7 @@ int main() {
   Vector<SpecTest> tests = {
       SpecTest("tokenizer.test", getActualResultForTokenizerTest),
       SpecTest("parser.test", getActualResultForParserTest),
+      SpecTest("compiler.test", getActualResultForCompilerTest),
   };
 
   Vector<FailedTest> failedTests;

@@ -1,0 +1,37 @@
+````
+Empty main function.
+TODO: Update error with location in code.
+````
+fn main() {
+}
+----
+Cannot have an empty statement block.
+====
+
+````
+Main function with only return.
+TODO: After supporting return statements, replace return
+      statements in main function with return 0;
+````
+fn main() {
+  return
+}
+----
+Unexpected token RETURN at 2:3 when parsing statement block.
+====
+
+````
+Hello world.
+TODO: Insert return 0; at end of main function, if not
+      already there.
+````
+fn main() {
+  println("Hello world!")
+}
+----
+#include <stdio.h>
+
+int main() {
+  println("Hello world!");
+}
+====
