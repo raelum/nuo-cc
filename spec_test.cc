@@ -12,10 +12,10 @@ struct TestCase {
 
 struct SpecTest {
   StringView testFileName;
-  String (*getActualResult)(const TestCase& testCase);
+  Result<String> (*getActualResult)(const TestCase& testCase);
 
   SpecTest(StringView testFileName,
-           String (*getActualResult)(const TestCase& testCase))
+           Result<String> (*getActualResult)(const TestCase& testCase))
       : testFileName(testFileName), getActualResult(getActualResult) {}
 
   Result<bool> run() {
@@ -178,7 +178,12 @@ struct SpecTest {
   Vector<String> getActualResults(Vector<TestCase>& testCases) {
     Vector<String> results;
     for (const auto& testCase : testCases) {
-      results.push_back(this->getActualResult(testCase));
+      Result<String> result = this->getActualResult(testCase);
+      if (result.ok) {
+        results.push_back(result.value);
+      } else {
+        results.push_back(result.error);
+      }
     }
     return results;
   }

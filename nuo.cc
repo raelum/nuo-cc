@@ -15,59 +15,41 @@ clang++ -Wextra -Werror -std=c++20 nuo.cc -o build/nuo && ./build/nuo
 #include "spec_test.cc"
 #include "tokenizer.cc"
 
-String getActualResultForTokenizerTest(const TestCase& testCase) {
+Result<String> getActualResultForTokenizerTest(const TestCase& testCase) {
   StringStream result;
   Tokenizer tokenizer(testCase.input);
   while (true) {
-    Result<Token> token = tokenizer.next();
-    if (!token.ok) {
-      return token.error;
-    }
-    result << token.value.toString(testCase.input);
-    if (token.value.type == TokenType::END) {
+    TRY(Token token, tokenizer.next());
+    result << token.toString(testCase.input);
+    if (token.type == TokenType::END) {
       break;
     }
     result << '\n';
   }
-  return result.str();
+  return Ok(result.str());
 }
 
-String getActualResultForParserTest(const TestCase& testCase) {
+Result<String> getActualResultForParserTest(const TestCase& testCase) {
   // Parse code.
   Parser parser(testCase.input);
-  Result<Program> program = parser.parse();
-  if (!program.ok) {
-    return program.error;
-  }
+  TRY(Program program, parser.parse());
   // Generate String from AST.
   AstPrinter astPrinter;
-  Result<String> programString = astPrinter.printProgram(program.value);
-  if (!programString.ok) {
-    return programString.error;
-  }
-  return programString.value;
+  TRY(String astString, astPrinter.printProgram(program));
+  return Ok(astString);
 }
 
-String getActualResultForCompilerTest(const TestCase& testCase) {
+Result<String> getActualResultForCompilerTest(const TestCase& testCase) {
   // Parse code.
   Parser parser(testCase.input);
-  Result<Program> parseResult = parser.parse();
-  if (!parseResult.ok) {
-    return parseResult.error;
-  }
+  TRY(Program program, parser.parse());
   // Analyze code.
   Analyzer analyzer;
-  Result<None> analyzerResult = analyzer.analyzeProgram(parseResult.value);
-  if (!analyzerResult.ok) {
-    return analyzerResult.error;
-  }
+  TRY(analyzer.analyzeProgram(program));
   // Compile code.
   Compiler compiler;
-  Result<String> compilerResult = compiler.compileProgram(parseResult.value);
-  if (!compilerResult.ok) {
-    return compilerResult.error;
-  }
-  return compilerResult.value;
+  TRY(String compiledProgram, compiler.compileProgram(program));
+  return Ok(compiledProgram);
 }
 
 struct FailedTest {
