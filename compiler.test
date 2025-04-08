@@ -12,6 +12,7 @@ Cannot have an empty statement block.
 Main function with only return.
 TODO: After supporting return statements, replace return
       statements in main function with return 0;
+TODO: Validate return type of main function to be VOID (or INT optionally)
 ````
 fn main() {
   return
@@ -24,6 +25,8 @@ Unexpected token RETURN at 2:3 when parsing statement block.
 Hello world.
 TODO: Insert return 0; at end of main function, if not
       already there.
+TODO: Import builtin println function from a custom C file.
+TODO: Validate function signature when calling builtin functions.
 ````
 fn main() {
   println("Hello world!")
