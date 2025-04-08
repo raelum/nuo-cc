@@ -126,15 +126,6 @@ struct Parser {
     return Ok(parameters);
   }
 
-  Result<Type> parseType() {
-    if (this->isToken(TokenType::INT)) {
-      TRY(this->consumeToken(TokenType::INT));
-      return Ok((Type)BaseType::INT);
-    }
-    return Error("Unexpected token {} when parsing type.",
-                 this->getTokenType());
-  }
-
   Result<StatementBlock> parseStatementBlock() {
     // Consume the opening brace.
     TRY(this->consumeToken(TokenType::LEFT_BRACE));
@@ -177,6 +168,36 @@ struct Parser {
                  this->getTokenType(), loc.line, loc.col);
   }
 
+  Result<Expression> parseExpression() {
+    Expression left;
+    // Parse the first expression which could potentially be the left side of a
+    // binary operation.
+    if (this->isToken(TokenType::IDENTIFIER)) {
+      TRY(left, this->parseIdentifierExpression());
+    } else if (this->isToken(TokenType::STRING)) {
+      // TODO: Remove need for specifying token type in this case.
+      TRY(StringView value, this->getTokenValue(TokenType::STRING));
+      return Ok(StringLiteral::make(std::move(value)));
+    } else {
+      Location loc = this->getLocation();
+      return Error(
+          "Unexpected token {} at {}:{} when parsing identifier expression.",
+          this->getTokenType(), loc.line, loc.col);
+    }
+
+    // TODO: Parse right side of binary operation.
+    return Ok(std::move(left));
+  }
+
+  Result<Type> parseType() {
+    if (this->isToken(TokenType::INT)) {
+      TRY(this->consumeToken(TokenType::INT));
+      return Ok((Type)BaseType::INT);
+    }
+    return Error("Unexpected token {} when parsing type.",
+                 this->getTokenType());
+  }
+
   Result<Statement> parseIdentifierStatement() {
     TRY(StringView name, this->getTokenValue(TokenType::IDENTIFIER));
 
@@ -190,16 +211,6 @@ struct Parser {
     return Error(
         "Unexpected token {} at {}:{} when parsing identifier statement.",
         this->getTokenType(), loc.line, loc.col);
-  }
-
-  Result<Statement> parseReturnStatement() {
-    TRY(this->consumeToken(TokenType::RETURN));
-
-    Optional<Expression> expression = std::nullopt;
-    if (!this->isToken(TokenType::NEWLINE)) {
-      TRY(expression, this->parseExpression());
-    }
-    return Ok(Return::makeStatement(std::move(expression)));
   }
 
   Result<Vector<Expression>> parseFunctionCallArguments() {
@@ -232,27 +243,6 @@ struct Parser {
     return Ok(std::move(args));
   }
 
-  Result<Expression> parseExpression() {
-    Expression left;
-    // Parse the first expression which could potentially be the left side of a
-    // binary operation.
-    if (this->isToken(TokenType::IDENTIFIER)) {
-      TRY(left, this->parseIdentifierExpression());
-    } else if (this->isToken(TokenType::STRING)) {
-      // TODO: Remove need for specifying token type in this case.
-      TRY(StringView value, this->getTokenValue(TokenType::STRING));
-      return Ok(StringLiteral::make(std::move(value)));
-    } else {
-      Location loc = this->getLocation();
-      return Error(
-          "Unexpected token {} at {}:{} when parsing identifier expression.",
-          this->getTokenType(), loc.line, loc.col);
-    }
-
-    // TODO: Parse right side of binary operation.
-    return Ok(std::move(left));
-  }
-
   Result<Expression> parseIdentifierExpression() {
     TRY(StringView name, this->getTokenValue(TokenType::IDENTIFIER));
 
@@ -264,6 +254,16 @@ struct Parser {
 
     // Otherwise, we just have a variable reference.
     return Ok(VariableReference::make(std::move(name)));
+  }
+
+  Result<Statement> parseReturnStatement() {
+    TRY(this->consumeToken(TokenType::RETURN));
+
+    Optional<Expression> expression = std::nullopt;
+    if (!this->isToken(TokenType::NEWLINE)) {
+      TRY(expression, this->parseExpression());
+    }
+    return Ok(Return::makeStatement(std::move(expression)));
   }
 };
 
