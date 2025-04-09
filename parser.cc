@@ -81,7 +81,7 @@ struct Parser {
     TRY(Vector<FunctionParameter> parameters, this->parseFunctionParameters());
 
     // Parse function return value, defaulting to void if there is none.
-    Type returnType = BaseType::VOID;
+    Type returnType = Type(BaseType::VOID);
     if (this->isToken(TokenType::COLON)) {
       TRY(this->consumeToken());
       TRY(returnType, this->parseType());
@@ -174,10 +174,13 @@ struct Parser {
     // binary operation.
     if (this->isToken(TokenType::IDENTIFIER)) {
       TRY(left, this->parseIdentifierExpression());
-    } else if (this->isToken(TokenType::STRING)) {
+    } else if (this->isToken(TokenType::STRING_LITERAL)) {
       // TODO: Remove need for specifying token type in this case.
-      TRY(StringView value, this->getTokenValue(TokenType::STRING));
+      TRY(StringView value, this->getTokenValue(TokenType::STRING_LITERAL));
       return Ok(StringLiteral::make(std::move(value)));
+    } else if (this->isToken(TokenType::NUMBER_LITERAL)) {
+      TRY(StringView value, this->getTokenValue(TokenType::NUMBER_LITERAL));
+      return Ok(NumberLiteral::make(std::move(value)));
     } else {
       Location loc = this->getLocation();
       return Error(
@@ -194,10 +197,15 @@ struct Parser {
       TRY(this->consumeToken(TokenType::INT));
       return Ok((Type)BaseType::INT);
     }
+    if (this->isToken(TokenType::FLOAT)) {
+      TRY(this->consumeToken(TokenType::FLOAT));
+      return Ok((Type)BaseType::FLOAT);
+    }
     return Error("Unexpected token {} when parsing type.",
                  this->getTokenType());
   }
 
+  // TODO: Combine with parseIdentifierExpression()
   Result<Statement> parseIdentifierStatement() {
     TRY(StringView name, this->getTokenValue(TokenType::IDENTIFIER));
 
@@ -243,6 +251,7 @@ struct Parser {
     return Ok(std::move(args));
   }
 
+  // TODO: Combine with parseIdentifierStatement()
   Result<Expression> parseIdentifierExpression() {
     TRY(StringView name, this->getTokenValue(TokenType::IDENTIFIER));
 

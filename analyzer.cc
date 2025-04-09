@@ -17,9 +17,13 @@ struct Analyzer {
   }
 
   Result<None> analyzeFunctionDeclaration(FunctionDeclaration& node) {
-    // Rewrite main function.
+    // Validate main function.
     if (node.name == "main") {
-      node.returnType = BaseType::INT;
+      if (!node.returnType.equals(BaseType::VOID) &&
+          !node.returnType.equals(BaseType::INT)) {
+        return Error("main function can only return VOID or INT.");
+      }
+      node.returnType = Type(BaseType::INT);
     }
     TRY(this->analyzeStatementBlock(node.body));
     return Ok();

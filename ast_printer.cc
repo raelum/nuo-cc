@@ -78,6 +78,11 @@ struct AstPrinter {
                                   level));
       return Ok();
     }
+    if (std::holds_alternative<Unique<NumberLiteral>>(node)) {
+      TRY(this->printNumberLiteral(*std::get<Unique<NumberLiteral>>(node),
+                                   level));
+      return Ok();
+    }
     if (std::holds_alternative<Unique<StringLiteral>>(node)) {
       TRY(this->printStringLiteral(*std::get<Unique<StringLiteral>>(node),
                                    level));
@@ -88,15 +93,15 @@ struct AstPrinter {
   }
 
   Result<None> printType(const Type& type) {
-    if (std::holds_alternative<BaseType>(type)) {
-      TRY(this->printBaseType(std::get<BaseType>(type)));
+    if (type.isBaseType()) {
+      TRY(this->printBaseType(type.getBaseType()));
       return Ok();
-    } else if (std::holds_alternative<ListType>(type)) {
-      TRY(this->printListType(std::get<ListType>(type)));
+    } else if (type.isListType()) {
+      TRY(this->printListType(type.getListType()));
       return Ok();
     }
     return Error("Unexpected Type with index {} when printing AST.",
-                 type.index());
+                 type.typeVariant.index());
   }
 
   Result<None> printListType(const ListType& listType) {
@@ -118,6 +123,12 @@ struct AstPrinter {
     for (size_t i = 0; i < node.args.size(); i++) {
       TRY(this->printExpression(node.args[i], level + 1));
     }
+    return Ok();
+  }
+
+  Result<None> printNumberLiteral(const NumberLiteral& node, int level) {
+    this->indent(level);
+    this->out << node.value;
     return Ok();
   }
 

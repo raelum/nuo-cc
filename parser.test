@@ -1,11 +1,11 @@
 ````
-Main function with just return.
+Function with return statement.
 ````
-fn main() {
+fn nothing() {
   return
 }
 ----
-FunctionDeclaration: main
+FunctionDeclaration: nothing
   params:
   returnType: VOID
   body:
@@ -14,13 +14,62 @@ FunctionDeclaration: main
 ====
 
 ````
-Hello world.
+Function with return type.
 ````
-fn main() {
+fn num(): int {
+  return 5
+}
+----
+FunctionDeclaration: num
+  params:
+  returnType: INT
+  body:
+    Return:
+      5
+====
+
+````
+Function with parameters.
+````
+fn ignore(x: int, y: float) {
+  return
+}
+----
+FunctionDeclaration: ignore
+  params:
+    x: INT
+    y: FLOAT
+  returnType: VOID
+  body:
+    Return:
+      VOID
+====
+
+````
+Function with parameters and return type.
+````
+fn some(x: int, y: int): float {
+  return 55.3
+}
+----
+FunctionDeclaration: some
+  params:
+    x: INT
+    y: INT
+  returnType: FLOAT
+  body:
+    Return:
+      55.3
+====
+
+````
+Function call.
+````
+fn greet() {
   print("Hello world!")
 }
 ----
-FunctionDeclaration: main
+FunctionDeclaration: greet
   params:
   returnType: VOID
   body:

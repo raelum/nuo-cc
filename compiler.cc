@@ -85,6 +85,10 @@ struct Compiler {
       TRY(this->compileFunctionCall(*std::get<Unique<FunctionCall>>(node)));
       return Ok();
     }
+    if (std::holds_alternative<Unique<NumberLiteral>>(node)) {
+      TRY(this->compileNumberLiteral(*std::get<Unique<NumberLiteral>>(node)));
+      return Ok();
+    }
     if (std::holds_alternative<Unique<StringLiteral>>(node)) {
       TRY(this->compileStringLiteral(*std::get<Unique<StringLiteral>>(node)));
       return Ok();
@@ -94,14 +98,15 @@ struct Compiler {
   }
 
   Result<None> compileType(const Type& type) {
-    if (std::holds_alternative<BaseType>(type)) {
-      TRY(this->compileBaseType(std::get<BaseType>(type)));
+    if (type.isBaseType()) {
+      TRY(this->compileBaseType(type.getBaseType()));
       return Ok();
-    } else if (std::holds_alternative<ListType>(type)) {
-      TRY(this->compileListType(std::get<ListType>(type)));
+    } else if (type.isListType()) {
+      TRY(this->compileListType(type.getListType()));
       return Ok();
     }
-    return Error("Unexpected Type with index {} when compiling.", type.index());
+    return Error("Unexpected Type with index {} when compiling.",
+                 type.typeVariant.index());
   }
 
   Result<None> compileBaseType(const BaseType& type) {
@@ -132,6 +137,11 @@ struct Compiler {
       }
     }
     this->out << ")";
+    return Ok();
+  }
+
+  Result<None> compileNumberLiteral(const NumberLiteral& node) {
+    this->out << node.value;
     return Ok();
   }
 

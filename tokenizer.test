@@ -57,9 +57,10 @@ END
 ````
 Type keywords.
 ````
-int
+int float
 ----
 INT
+FLOAT
 END
 ====
 
@@ -92,11 +93,11 @@ Numbers.
 456.7809
 000
 ----
-NUMBER 123
+NUMBER_LITERAL 123
 NEWLINE
-NUMBER 456.7809
+NUMBER_LITERAL 456.7809
 NEWLINE
-NUMBER 000
+NUMBER_LITERAL 000
 END
 ====
 
@@ -117,16 +118,16 @@ Strings.
 eating carrots")
 "dyno chugs juice"
 ----
-STRING "anya likes to play"
+STRING_LITERAL "anya likes to play"
 NEWLINE
-STRING "boren is cool"
+STRING_LITERAL "boren is cool"
 NEWLINE
 LEFT_PAREN
-STRING "carot loves
+STRING_LITERAL "carot loves
 eating carrots"
 RIGHT_PAREN
 NEWLINE
-STRING "dyno chugs juice"
+STRING_LITERAL "dyno chugs juice"
 END
 ====
 

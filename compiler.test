@@ -1,5 +1,5 @@
 ````
-Empty main function.
+Empty main function fails.
 TODO: Update error with location in code.
 ````
 fn main() {
@@ -9,10 +9,9 @@ Cannot have an empty statement block.
 ====
 
 ````
-Main function with only return.
+Main function with no return type.
 TODO: Replace return statements in main function with
       return 0;
-TODO: Validate return type of main function to be VOID (or INT optionally)
 ````
 fn main() {
   return
@@ -21,6 +20,29 @@ fn main() {
 int main() {
   return;
 }
+====
+
+````
+Main function with INT return type.
+````
+fn main(): int {
+  return 0
+}
+----
+int main() {
+  return 0;
+}
+====
+
+````
+Main function with FLOAT return type fails.
+TODO: Update error with location in code.
+````
+fn main(): float {
+  return 0.1
+}
+----
+main function can only return VOID or INT.
 ====
 
 ````

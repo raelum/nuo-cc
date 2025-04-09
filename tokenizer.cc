@@ -35,8 +35,9 @@
   GENERATOR(FOR)                      \
   GENERATOR(IDENTIFIER)               \
   GENERATOR(INT)                      \
-  GENERATOR(NUMBER)                   \
-  GENERATOR(STRING)
+  GENERATOR(FLOAT)                    \
+  GENERATOR(NUMBER_LITERAL)           \
+  GENERATOR(STRING_LITERAL)
 enum class TokenType { FOREACH_TOKEN_TYPE(ENUM_GENERATOR) };
 static const char* tokenTypeString[] = {FOREACH_TOKEN_TYPE(STRING_GENERATOR)};
 StringView tokenTypeToString(TokenType type) {
@@ -52,7 +53,8 @@ struct Token {
   String toString(StringView source) {
     bool showText = false;
     if (this->type == TokenType::IDENTIFIER ||
-        this->type == TokenType::NUMBER || this->type == TokenType::STRING) {
+        this->type == TokenType::NUMBER_LITERAL ||
+        this->type == TokenType::STRING_LITERAL) {
       showText = true;
     }
 
@@ -271,7 +273,22 @@ struct Tokenizer {
       }
     } else if (this->matchChar('f')) {
       // token: f
-      if (this->matchChar('n')) {
+      if (this->matchChar('l')) {
+        // token: fl
+        if (this->matchChar('o')) {
+          // token: flo
+          if (this->matchChar('a')) {
+            // token: floa
+            if (this->matchChar('t')) {
+              // token: float
+              if (!this->isIdentifierChar()) {
+                // token: float<end>
+                return this->makeToken(TokenType::FLOAT);
+              }
+            }
+          }
+        }
+      } else if (this->matchChar('n')) {
         // token: fn
         if (!this->isIdentifierChar()) {
           // token: fn<end>
@@ -350,7 +367,7 @@ struct Tokenizer {
       }
       consumeNumberChars();
     }
-    return Ok(this->makeToken(TokenType::NUMBER));
+    return Ok(this->makeToken(TokenType::NUMBER_LITERAL));
   }
 
   void consumeNumberChars() {
@@ -368,7 +385,7 @@ struct Tokenizer {
     // Return string token only if we've truly reached the end of the string.
     if (!this->isAtEnd() && this->peekChar() == '"') {
       this->consumeChar();
-      Token stringToken = this->makeToken(TokenType::STRING);
+      Token stringToken = this->makeToken(TokenType::STRING_LITERAL);
       return Ok(stringToken);
     }
     Location loc = this->getLocation();

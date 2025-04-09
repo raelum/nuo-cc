@@ -6,7 +6,8 @@
 // Base Type enum and their string names for debugging.
 #define FOREACH_BASE_TYPE(GENERATOR) \
   GENERATOR(VOID)                    \
-  GENERATOR(INT)
+  GENERATOR(INT)                     \
+  GENERATOR(FLOAT)
 enum class BaseType { FOREACH_BASE_TYPE(ENUM_GENERATOR) };
 static const char* baseTypeString[] = {FOREACH_BASE_TYPE(STRING_GENERATOR)};
 String baseTypeToString(BaseType type) {
@@ -17,12 +18,36 @@ struct ListType {
   BaseType elementType;
 };
 
-using Type = Variant<BaseType, ListType>;
+struct Type {
+  Variant<BaseType, ListType> typeVariant;
+
+  bool isBaseType() const {
+    return std::holds_alternative<BaseType>(this->typeVariant);
+  }
+
+  BaseType getBaseType() const { return std::get<BaseType>(this->typeVariant); }
+
+  bool isListType() const {
+    return std::holds_alternative<ListType>(this->typeVariant);
+  }
+
+  ListType getListType() const { return std::get<ListType>(this->typeVariant); }
+
+  bool equals(BaseType baseType) {
+    return this->isBaseType() && this->getBaseType() == baseType;
+  }
+
+  bool equals(ListType listType) {
+    return this->isListType() &&
+           this->getListType().elementType == listType.elementType;
+  }
+};
 
 // Forward declare Ast Nodes that are used in Statement or Expression variants.
 struct VariableDeclaration;
 struct VariableReference;
 struct FunctionCall;
+struct NumberLiteral;
 struct StringLiteral;
 struct Return;
 
@@ -30,7 +55,7 @@ using Statement =
     Variant<Unique<VariableDeclaration>, Unique<FunctionCall>, Unique<Return>>;
 
 using Expression = Variant<Unique<VariableReference>, Unique<FunctionCall>,
-                           Unique<StringLiteral>>;
+                           Unique<StringLiteral>, Unique<NumberLiteral>>;
 
 struct FunctionParameter {
   StringView name;
@@ -64,6 +89,14 @@ struct FunctionCall {
   static Expression makeExpression(StringView name, Vector<Expression> args) {
     return Unique<FunctionCall>(
         new FunctionCall{.name = std::move(name), .args = std::move(args)});
+  }
+};
+
+struct NumberLiteral {
+  StringView value;
+
+  static Expression make(StringView value) {
+    return Unique<NumberLiteral>(new NumberLiteral{.value = std::move(value)});
   }
 };
 
