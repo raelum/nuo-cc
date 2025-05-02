@@ -1,3 +1,155 @@
+---- LuaJIT Backend World ----
+
+NOTE: Since creating this section, I found out that LuaJIT isn't portable to
+      WASM, which is unfortunate because I would love to have full portability.
+
+I'm designing a language, Nuo, that compiles to Lua to take advantage of LuaJIT.
+The goal is to maximize performance within context of the Lua language.
+I don't care about the quality of the generated Lua code since my team will only
+be working with Nuo instead. Here is the syntax spec. Please provide me
+feedback.
+Builtin Types:
+bool
+int
+float  // double
+str  // string
+int?  // nillable int
+
+Builtin Data structures:
+[int]  // array of ints. Implemented using Lua tables.
+{int}  // set of ints. Implemented using Lua tables.
+{str: int}  // dict of int to string. Implemented using Lua tables.
+
+The following examples show the new language along with the generated Lua code
+underneath.
+
+````
+Variables
+````
+x = 5  // First usage, declaration
+x = x + 1  // Second usage, assignment
+----
+local x = 5
+x = x + 1
+====
+
+````
+Simple Function
+````
+fun add(x: int, y:int): int
+  return x + y
+end
+----
+local function add(x, y)
+  return x + y
+end
+====
+
+````
+Structs
+````
+type Person
+  pub name: str  // Public field
+  money: int  // Private field
+
+  // Public function
+  pub fun pay(amount: x)
+    this.money += amount
+  end
+end
+----
+local Person = {}
+
+function Person.new(name, money)
+  local self = setmetatable({}, { __index = Person })
+  self.name = name
+  self.money = money
+  return self
+end
+
+function Person:pay(amount)
+  self.money = self.money + amount
+end
+====
+
+````
+Enums
+````
+enum Color
+  RED
+  BLUE
+  GREEN
+end
+----
+Color = {
+  RED = 1,
+  BLUE = 2,
+  GREEN = 3
+}
+====
+
+````
+Print functions
+````
+write("greetings ")
+print("friend!")
+// Output: greetings friend!\n
+----
+io.write("greetings ")
+print("friend!")
+====
+
+````
+Infinite loop
+````
+x = 1
+for
+  x += 1
+  print("hello!")
+  if x >= 10
+    break
+  end
+end
+----
+local x = 1
+while true do
+  x = x + 1
+  print("hello!")
+  if x >= 10 then
+    break
+  end
+end
+====
+
+````
+While loop (unified with for syntax)
+````
+x = 0
+for x < 10
+  print("hello!")
+  x += 1
+end
+----
+local x = 0
+while x < 10 do
+  print("hello!")
+  x = x + 1
+end
+====
+
+TODO:
+- Control flow (for loops, if statements)
+- How to use nillable types? (take inspiration from Swift)
+  x: int? = nil
+  y: int = 5
+  z: int = x + y
+- Update enums to support associated types like Rust, Swift (std::variant)
+- Example of array indexing with 1 offset
+
+
+
+
+---- C Backend World ----
 // Stack values
 Int
 Char
