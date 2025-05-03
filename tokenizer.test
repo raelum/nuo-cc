@@ -37,7 +37,7 @@ END
 ====
 
 ````
-Control flow keywords.
+Keywords.
 ````
 fn return
 if elif else
@@ -172,4 +172,17 @@ Unexpected character.
 anya ~ boren
 ----
 Ran into an unexpected character '~' at line 1 column 6
+====
+
+````
+C code.
+````
+[[
+  printf("Hello, world!\n");
+]]
+----
+C_CODE [[
+  printf("Hello, world!\n");
+]]
+END
 ====

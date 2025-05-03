@@ -50,9 +50,10 @@ struct FunctionCall;
 struct NumberLiteral;
 struct StringLiteral;
 struct Return;
+struct CCode;
 
-using Statement =
-    Variant<Unique<VariableDeclaration>, Unique<FunctionCall>, Unique<Return>>;
+using Statement = Variant<Unique<VariableDeclaration>, Unique<FunctionCall>,
+                          Unique<Return>, Unique<CCode>>;
 
 using Expression = Variant<Unique<VariableReference>, Unique<FunctionCall>,
                            Unique<StringLiteral>, Unique<NumberLiteral>>;
@@ -125,6 +126,14 @@ struct FunctionDeclaration {
   Vector<FunctionParameter> params;
   Type returnType;
   StatementBlock body;
+};
+
+struct CCode {
+  StringView code;
+
+  static Statement makeStatement(StringView code) {
+    return Unique<CCode>(new CCode{.code = code});
+  }
 };
 
 struct Program {

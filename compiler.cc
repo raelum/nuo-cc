@@ -59,22 +59,30 @@ struct Compiler {
       for (size_t i = 0; i < this->indent; i++) {
         this->out << " ";
       }
-      TRY(this->compileStatement(statement));
-      this->out << ";\n";
+      TRY(bool appendSemicolon, this->compileStatement(statement));
+      if (appendSemicolon) {
+        this->out << ";";
+      }
+      this->out << "\n";
     }
     this->indent -= INDENT_SIZE;
     this->out << "}";
     return Ok();
   }
 
-  Result<None> compileStatement(const Statement& node) {
+  // Returns true if a semicolon is needed after this statement.
+  Result<bool> compileStatement(const Statement& node) {
     if (std::holds_alternative<Unique<FunctionCall>>(node)) {
       TRY(this->compileFunctionCall(*std::get<Unique<FunctionCall>>(node)));
-      return Ok();
+      return Ok(true);
     }
     if (std::holds_alternative<Unique<Return>>(node)) {
       TRY(this->compileReturn(*std::get<Unique<Return>>(node)));
-      return Ok();
+      return Ok(true);
+    }
+    if (std::holds_alternative<Unique<CCode>>(node)) {
+      TRY(this->compileCCode(*std::get<Unique<CCode>>(node)));
+      return Ok(false);
     }
     return Error("Unexpected Statement of index {} when compiling.",
                  node.index());
@@ -156,6 +164,11 @@ struct Compiler {
       this->out << " ";
       TRY(this->compileExpression(node.expression.value()));
     }
+    return Ok();
+  }
+
+  Result<None> compileCCode(const CCode& node) {
+    this->out << node.code.substr(2, node.code.size() - 4);
     return Ok();
   }
 };

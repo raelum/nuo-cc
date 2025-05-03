@@ -62,3 +62,20 @@ int main() {
   println("Hello world!");
 }
 ====
+
+````
+Hello world.
+TODO: Fix formatting of C code.
+````
+fn greet() {
+  [[
+    printf("Hello, world!\n");
+  ]]
+}
+----
+void greet() {
+  
+    printf("Hello, world!\n");
+  
+}
+====

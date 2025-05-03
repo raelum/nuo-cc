@@ -68,6 +68,10 @@ struct AstPrinter {
       TRY(this->printReturn(*std::get<Unique<Return>>(node), level));
       return Ok();
     }
+    if (std::holds_alternative<Unique<CCode>>(node)) {
+      TRY(this->printCCode(*std::get<Unique<CCode>>(node), level));
+      return Ok();
+    }
     return Error("Unexpected Statement of index {} when converting to String.",
                  node.index());
   }
@@ -146,6 +150,26 @@ struct AstPrinter {
     } else {
       this->indent(level + 1);
       this->out << "VOID";
+    }
+    return Ok();
+  }
+
+  Result<None> printCCode(const CCode& node, int level) {
+    this->indent(level);
+    this->out << "CCode:\n";
+    TRY(printIndentedString(node.code, level + 1));
+    return Ok();
+  }
+
+  // TODO: Fix this indentation.
+  Result<None> printIndentedString(StringView value, int level) {
+    print(level);
+    this->indent(level);
+    for (char c : value) {
+      this->out << c;
+      if (c == '\n') {
+        this->indent(level);
+      }
     }
     return Ok();
   }

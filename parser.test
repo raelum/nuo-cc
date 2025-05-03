@@ -76,3 +76,22 @@ FunctionDeclaration: greet
     FunctionCall: print
       "Hello world!"
 ====
+
+````
+Inline C code.
+````
+fn greet() {
+  [[
+    printf("Hello, world!\n");
+  ]]
+}
+----
+FunctionDeclaration: greet
+  params:
+  returnType: VOID
+  body:
+    CCode:
+      [[
+          printf("Hello, world!\n");
+        ]]
+====

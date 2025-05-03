@@ -37,7 +37,8 @@
   GENERATOR(INT)                      \
   GENERATOR(FLOAT)                    \
   GENERATOR(NUMBER_LITERAL)           \
-  GENERATOR(STRING_LITERAL)
+  GENERATOR(STRING_LITERAL)           \
+  GENERATOR(C_CODE)
 enum class TokenType { FOREACH_TOKEN_TYPE(ENUM_GENERATOR) };
 static const char* tokenTypeString[] = {FOREACH_TOKEN_TYPE(STRING_GENERATOR)};
 StringView tokenTypeToString(TokenType type) {
@@ -54,7 +55,8 @@ struct Token {
     bool showText = false;
     if (this->type == TokenType::IDENTIFIER ||
         this->type == TokenType::NUMBER_LITERAL ||
-        this->type == TokenType::STRING_LITERAL) {
+        this->type == TokenType::STRING_LITERAL ||
+        this->type == TokenType::C_CODE) {
       showText = true;
     }
 
@@ -122,7 +124,11 @@ struct Tokenizer {
     } else if (c == '}') {
       return Ok(this->makeToken(TokenType::RIGHT_BRACE));
     } else if (c == '[') {
-      return Ok(this->makeToken(TokenType::LEFT_BRACKET));
+      if (this->matchChar('[')) {
+        return this->makeCCodeToken();
+      } else {
+        return Ok(this->makeToken(TokenType::LEFT_BRACKET));
+      }
     } else if (c == ']') {
       return Ok(this->makeToken(TokenType::RIGHT_BRACKET));
     } else if (c == ',') {
@@ -391,6 +397,28 @@ struct Tokenizer {
     Location loc = this->getLocation();
     return Error("Unterminated string that started at line {} column {}.",
                  loc.line, loc.col);
+  }
+
+  Result<Token> makeCCodeToken() {
+    // Consume characters until we reach the end of the c code or the end of the
+    // file.
+    while (true) {
+      // Iterate until we see ']'
+      while (!this->isAtEnd() && this->peekChar() != ']') {
+        this->consumeChar();
+      }
+      // Return error if we exited above loop for being end of file.
+      if (this->isAtEnd()) {
+        Location loc = this->getLocation();
+        return Error("Unterminated c code that started at line {} column {}.",
+                     loc.line, loc.col);
+      }
+      // Return if we see ']]' signifying end of c code.
+      // TODO: This doesn't account for nested ]] within c code.
+      if (this->matchChar(']') && this->matchChar(']')) {
+        return Ok(this->makeToken(TokenType::C_CODE));
+      }
+    }
   }
 };
 

@@ -161,6 +161,9 @@ struct Parser {
       TRY(Statement statement, this->parseReturnStatement());
       TRY(this->consumeToken(TokenType::NEWLINE));
       return Ok(std::move(statement));
+    } else if (this->isToken(TokenType::C_CODE)) {
+      TRY(Statement statement, this->parseCCodeStatement());
+      return Ok(std::move(statement));
     }
     // Fail for every other token type.
     Location loc = this->getLocation();
@@ -273,6 +276,11 @@ struct Parser {
       TRY(expression, this->parseExpression());
     }
     return Ok(Return::makeStatement(std::move(expression)));
+  }
+
+  Result<Statement> parseCCodeStatement() {
+    TRY(StringView value, this->getTokenValue(TokenType::C_CODE));
+    return Ok(CCode::makeStatement(value));
   }
 };
 
