@@ -78,7 +78,29 @@ FunctionDeclaration: greet
 ====
 
 ````
-Inline C code.
+Inline C code at top level.
+````
+[[
+  #include <stdio.h>
+]]
+fn add(): int {
+  return 5
+}
+----
+CCode:
+  [[
+    #include <stdio.h>
+  ]]
+FunctionDeclaration: add
+  params:
+  returnType: INT
+  body:
+    Return:
+      5
+====
+
+````
+Inline C code within function.
 ````
 fn greet() {
   [[

@@ -22,6 +22,17 @@ struct Compiler {
       this->out << "\n";
     }
 
+    // Compile c codes.
+    for (size_t i = 0; i < node.cCodes.size(); i++) {
+      TRY(this->compileCCode(node.cCodes[i]));
+      if (i < node.cCodes.size() - 1) {
+        this->out << "\n\n";
+      }
+    }
+    if (node.cCodes.size() > 0) {
+      this->out << "\n";
+    }
+
     // Compile functions.
     for (size_t i = 0; i < node.functions.size(); i++) {
       TRY(this->compileFunctionDeclaration(node.functions[i]));

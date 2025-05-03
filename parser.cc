@@ -17,17 +17,27 @@ struct Parser {
     TRY(this->currentToken, this->tokenizer.next());
 
     Vector<FunctionDeclaration> functions;
+    Vector<CCode> cCodes;
     while (!this->isToken(TokenType::END)) {
       // Consume any preceding or trailing newlines.
       if (this->isToken(TokenType::NEWLINE)) {
         TRY(this->consumeToken());
+      } else if (this->isToken(TokenType::C_CODE)) {
+        TRY(CCode cCode, this->parseCCodeDeclaration());
+        cCodes.push_back(std::move(cCode));
       } else if (this->isToken(TokenType::FN)) {
         TRY(FunctionDeclaration function, this->parseFunctionDeclaration());
         functions.push_back(std::move(function));
+      } else {
+        Location loc = this->getLocation();
+        return Error(
+            "Unexpected token {} at {}:{} when parsing statement block.",
+            this->getTokenType(), loc.line, loc.col);
       }
     }
 
-    return Ok(Program{.functions = std::move(functions)});
+    return Ok(Program{.cCodes = std::move(cCodes),
+                      .functions = std::move(functions)});
   }
 
   // Checks if the current token is of the given type.
@@ -276,6 +286,11 @@ struct Parser {
       TRY(expression, this->parseExpression());
     }
     return Ok(Return::makeStatement(std::move(expression)));
+  }
+
+  Result<CCode> parseCCodeDeclaration() {
+    TRY(StringView value, this->getTokenValue(TokenType::C_CODE));
+    return Ok(CCode{.code = value});
   }
 
   Result<Statement> parseCCodeStatement() {

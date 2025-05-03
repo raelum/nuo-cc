@@ -138,6 +138,7 @@ struct CCode {
 
 struct Program {
   Vector<String> includes;
+  Vector<CCode> cCodes;
   Vector<FunctionDeclaration> functions;
 };
 

@@ -64,15 +64,22 @@ int main() {
 ====
 
 ````
-Hello world.
+Inline C code.
 TODO: Fix formatting of C code.
 ````
+[[
+  #include <stdio.h>
+]]
+
 fn greet() {
   [[
     printf("Hello, world!\n");
   ]]
 }
 ----
+
+  #include <stdio.h>
+
 void greet() {
   
     printf("Hello, world!\n");

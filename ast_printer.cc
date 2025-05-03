@@ -9,14 +9,25 @@ struct AstPrinter {
 
   Result<String> printProgram(const Program& node) {
     // Empty the output buffer in case this was called before.
-    out.str("");
+    this->out.str("");
+    // Print c code declarations.
+    for (size_t i = 0; i < node.cCodes.size(); i++) {
+      TRY(this->printCCode(node.cCodes[i], 0));
+      if (i < node.cCodes.size() - 1) {
+        this->out << "\n";
+      }
+    }
+    if (node.cCodes.size() != 0) {
+      this->out << "\n";
+    }
+    // Print function declarations.
     for (size_t i = 0; i < node.functions.size(); i++) {
       TRY(this->printFunctionDeclaration(node.functions[i], 0));
       if (i < node.functions.size() - 1) {
-        out << "\n";
+        this->out << "\n";
       }
     }
-    return Ok(out.str());
+    return Ok(this->out.str());
   }
 
   void indent(int level) {
@@ -163,7 +174,6 @@ struct AstPrinter {
 
   // TODO: Fix this indentation.
   Result<None> printIndentedString(StringView value, int level) {
-    print(level);
     this->indent(level);
     for (char c : value) {
       this->out << c;
