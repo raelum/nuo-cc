@@ -186,3 +186,18 @@ C_CODE [[
 ]]
 END
 ====
+
+````
+Comment
+````
+// This is a comment.
+x = 5 // Appending comment.
+----
+COMMENT // This is a comment.
+NEWLINE
+IDENTIFIER x
+EQUAL
+NUMBER_LITERAL 5
+COMMENT // Appending comment.
+END
+====

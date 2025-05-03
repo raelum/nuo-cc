@@ -2,6 +2,7 @@
   #include <stdio.h>
 ]]
 
+// This is a comment.
 fn main() {
   [[
     printf("Hello, world!\n");

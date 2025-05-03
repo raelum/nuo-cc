@@ -19,8 +19,9 @@ struct Parser {
     Vector<FunctionDeclaration> functions;
     Vector<CCode> cCodes;
     while (!this->isToken(TokenType::END)) {
-      // Consume any preceding or trailing newlines.
-      if (this->isToken(TokenType::NEWLINE)) {
+      // Consume any preceding or trailing newlines & comments.
+      if (this->isToken(TokenType::NEWLINE) ||
+          this->isToken(TokenType::COMMENT)) {
         TRY(this->consumeToken());
       } else if (this->isToken(TokenType::C_CODE)) {
         TRY(CCode cCode, this->parseCCodeDeclaration());
@@ -143,7 +144,8 @@ struct Parser {
     Vector<Statement> statements;
     while (true) {
       // Consume any preceding, or trailing newlines.
-      if (this->isToken(TokenType::NEWLINE)) {
+      if (this->isToken(TokenType::NEWLINE) ||
+          this->isToken(TokenType::COMMENT)) {
         TRY(this->consumeToken());
       }
       // Exit the loop if we encounter the closing brace.
@@ -165,10 +167,16 @@ struct Parser {
     // Parse identifier statement, expecting a newline after it.
     if (this->isToken(TokenType::IDENTIFIER)) {
       TRY(Statement statement, this->parseIdentifierStatement());
+      if (this->isToken(TokenType::COMMENT)) {
+        TRY(this->consumeToken());
+      }
       TRY(this->consumeToken(TokenType::NEWLINE));
       return Ok(std::move(statement));
     } else if (this->isToken(TokenType::RETURN)) {
       TRY(Statement statement, this->parseReturnStatement());
+      if (this->isToken(TokenType::COMMENT)) {
+        TRY(this->consumeToken());
+      }
       TRY(this->consumeToken(TokenType::NEWLINE));
       return Ok(std::move(statement));
     } else if (this->isToken(TokenType::C_CODE)) {

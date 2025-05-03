@@ -117,3 +117,20 @@ FunctionDeclaration: greet
           printf("Hello, world!\n");
         ]]
 ====
+
+````
+Comments.
+````
+// Top level comment.
+fn num() {
+  // Function level comment.
+  return 5 // Append comment.
+}
+----
+FunctionDeclaration: num
+  params:
+  returnType: VOID
+  body:
+    Return:
+      5
+====

@@ -38,7 +38,8 @@
   GENERATOR(FLOAT)                    \
   GENERATOR(NUMBER_LITERAL)           \
   GENERATOR(STRING_LITERAL)           \
-  GENERATOR(C_CODE)
+  GENERATOR(C_CODE)                   \
+  GENERATOR(COMMENT)
 enum class TokenType { FOREACH_TOKEN_TYPE(ENUM_GENERATOR) };
 static const char* tokenTypeString[] = {FOREACH_TOKEN_TYPE(STRING_GENERATOR)};
 StringView tokenTypeToString(TokenType type) {
@@ -56,7 +57,7 @@ struct Token {
     if (this->type == TokenType::IDENTIFIER ||
         this->type == TokenType::NUMBER_LITERAL ||
         this->type == TokenType::STRING_LITERAL ||
-        this->type == TokenType::C_CODE) {
+        this->type == TokenType::C_CODE || this->type == TokenType::COMMENT) {
       showText = true;
     }
 
@@ -171,6 +172,14 @@ struct Tokenizer {
         return Ok(this->makeToken(TokenType::MINUS_EQUAL));
       }
       return Ok(this->makeToken(TokenType::MINUS));
+    } else if (c == '/') {
+      if (this->matchChar('/')) {
+        return this->makeComment();
+      } else {
+        Location loc = this->getLocation();
+        return Error("Unexpected character {} after '\' at location {}:{}",
+                     this->peekChar(), loc.line, loc.col);
+      }
     }
 
     Location loc = this->getLocation();
@@ -419,6 +428,14 @@ struct Tokenizer {
         return Ok(this->makeToken(TokenType::C_CODE));
       }
     }
+  }
+
+  Result<Token> makeComment() {
+    // Consume characters until we reach the end of the line.
+    while (this->peekChar() != '\n') {
+      this->consumeChar();
+    }
+    return Ok(this->makeToken(TokenType::COMMENT));
   }
 };
 
