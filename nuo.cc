@@ -1,10 +1,6 @@
 #ifndef NUO_CC
 #define NUO_CC
 
-/*
-Run code:
-clang++ -Wextra -Werror -std=c++20 nuo.cc -o build/nuo && ./build/nuo
-*/
 #include "analyzer.cc"
 #include "ast.cc"
 #include "ast_printer.cc"
@@ -57,7 +53,7 @@ struct FailedTest {
   Optional<String> error;
 };
 
-int main() {
+void runTests() {
   Vector<SpecTest> tests = {
       SpecTest("tokenizer.test", getActualResultForTokenizerTest),
       SpecTest("parser.test", getActualResultForParserTest),
@@ -89,6 +85,49 @@ int main() {
       }
     }
   }
+}
+
+Result<None> compile(StringView target) {
+  // Read target.
+  TRY(String code, readFile(target));
+  // Parse code.
+  Parser parser(code);
+  TRY(Program program, parser.parse());
+  // Analyze code.
+  Analyzer analyzer;
+  TRY(analyzer.analyzeProgram(program));
+  // Compile code.
+  Compiler compiler;
+  TRY(String compiledProgram, compiler.compileProgram(program));
+  // Write compiled code.
+  TRY(writeFile(String(target) + String(".c"), compiledProgram));
+  return Ok();
+}
+
+int main(int argc, char* argv[]) {
+  if (argc <= 1) {
+    print("Please specify args. --test OR --compile <target>");
+    return 1;
+  }
+
+  String arg1 = String(argv[1]);
+  if (arg1 == "--test") {
+    runTests();
+  } else if (arg1 == "--compile") {
+    if (argc != 3) {
+      print("Please specify exactly 1 path of target to compile.");
+      return 1;
+    }
+    Result<None> compileResult = compile(String(argv[2]));
+    if (!compileResult.ok) {
+      print("ERROR: {}", compileResult.error);
+      return 1;
+    }
+  } else {
+    print("Invalid first argument: {}", arg1);
+    return 1;
+  }
+  return 0;
 }
 
 #endif  // NUO_CC
